@@ -15,15 +15,18 @@ Provide a safe, scriptable CLI for WhiteBIT collateral trading with enough struc
 
 ### `wbcli auth`
 
-- `wbcli auth set --profile default --api-key <...> --api-secret <...>`
+- `printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile default`
+- `wbcli auth use --profile default`
 - `wbcli auth list`
-- `wbcli auth remove --profile default`
+- `wbcli auth logout --profile default`
+- `wbcli auth current`
 - `wbcli auth test --profile default`
 
 Implementation notes:
 
 - store secrets using platform secret storage (Keychain/libsecret/Credential Manager)
-- keep only non-sensitive metadata in local config (profile name, created_at, last_used_at)
+- keep only non-sensitive metadata in `~/.wbcli/config.yaml` (profile name, backend, timestamps)
+- `auth login` accepts credentials only from stdin payload (first line API key, second line API secret)
 
 ### Credential Encryption and Access Plan
 
@@ -36,13 +39,13 @@ Implementation notes:
   - file permissions: owner-only (`0600`)
   - authenticated metadata: profile name + schema version
 - runtime access policy:
-  - prompt for secrets using non-echo input
+  - use stdin-only credential input for `auth login`; no credential flags
   - do not log API keys, payload, signatures, or secrets
   - support short session unlock TTL for repeated commands
   - clear plaintext buffers after signing where practical
 - lifecycle policy:
   - support key rotation workflow (`auth rotate`) with cutover validation
-  - support local credential revoke/delete (`auth revoke` / `auth remove`)
+  - support local credential revoke/delete (`auth revoke` / `auth logout`)
   - prefer restricted exchange-side API key permissions and IP allowlist where supported
 
 ### `wbcli order place`

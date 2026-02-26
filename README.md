@@ -21,6 +21,7 @@ This repository currently defines the project plan and operating docs for:
   - store API credentials in OS keychain/secret store where possible
   - never persist raw secrets in git-tracked files
   - support profile-based credentials (for multiple accounts/environments)
+  - commands: `auth login`, `auth use`, `auth list`, `auth logout`, `auth current`, `auth test`
 - `order place`:
   - place one collateral limit order via WhiteBIT authenticated API
 - `order range`:
@@ -57,6 +58,41 @@ go install github.com/ChewX3D/wbcli@latest
 ```bash
 go run . --help
 ```
+
+## Auth usage
+
+`auth login` is stdin-only and expects exactly two lines:
+
+1. API key
+2. API secret
+
+Local shell example:
+
+```bash
+printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile prod
+```
+
+CI example:
+
+```bash
+printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile ci --force
+```
+
+Other auth commands:
+
+```bash
+wbcli auth use --profile prod
+wbcli auth list
+wbcli auth current
+wbcli auth logout --profile prod
+wbcli auth test --profile prod
+```
+
+Security notes:
+
+- do not pass API key or secret as command arguments
+- metadata only is written to `~/.wbcli/config.yaml`
+- credentials are stored via `os-keychain` backend
 
 ## Tests
 
