@@ -36,6 +36,18 @@ This repository currently defines the project plan and operating docs for:
 - [Project operating system / workflow rules](AGENTS.md)
 - [Ticket workflow and commands](tickets/README.md)
 
+## Build
+
+```bash
+go build -o bin/wbcli ./cmd/wbcli
+```
+
+## Run
+
+```bash
+go run ./cmd/wbcli --help
+```
+
 ## Suggested Build Direction
 
 Keep core logic reusable:
