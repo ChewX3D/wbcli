@@ -6,7 +6,7 @@ import (
 	"github.com/ChewX3D/wbcli/cmd"
 )
 
-//go:embed cmd/wbcli/config.yaml
+//go:embed config.yaml
 var buildConfig []byte
 
 func main() {

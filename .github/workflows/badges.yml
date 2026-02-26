@@ -57,8 +57,8 @@ jobs:
         run: |
           mkdir -p dist
 
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-amd64 ./cmd/wbcli
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-arm64 ./cmd/wbcli
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-amd64 .
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-arm64 .
 
           size_amd64=$(wc -c < dist/wbcli-linux-amd64 | tr -d ' ')
           size_arm64=$(wc -c < dist/wbcli-linux-arm64 | tr -d ' ')

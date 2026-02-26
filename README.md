@@ -55,7 +55,7 @@ go install github.com/ChewX3D/wbcli@latest
 ## Run
 
 ```bash
-go run ./cmd/wbcli --help
+go run . --help
 ```
 
 ## Suggested Build Direction
@@ -66,6 +66,6 @@ Keep core logic reusable:
 - `internal/app`: use-cases (`PlaceOrder`, `PlaceOrderRange`, `PreviewRange`)
 - `internal/adapters/whitebit`: signed HTTP client + endpoint mapping
 - `internal/adapters/secretstore`: keychain integration
-- `cmd/wbcli`: CLI surface only
+- `main.go` + `cmd/`: CLI surface and command wiring only
 
 This split lets you add a UI later without duplicating order logic.

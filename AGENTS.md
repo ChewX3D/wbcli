@@ -308,7 +308,7 @@ Dependency rule (non-negotiable):
 - `internal/domain` must not import adapter/infrastructure packages
 - `internal/app` may depend on `domain` and port interfaces, never concrete infrastructure
 - adapters depend on core ports and translate external concerns to/from core models
-- `cmd/wbcli` is the composition root that wires concrete adapters into use cases
+- root `main.go` and `cmd` package act as the composition root that wires concrete adapters into use cases
 
 Implementation contract by layer:
 
@@ -327,7 +327,7 @@ Implementation contract by layer:
   - map external formats/protocols to core DTOs and back
   - isolate exchange-specific/auth-specific/storage-specific details
   - do not leak transport models into domain
-- Composition root (`cmd/wbcli`)
+- Composition root (`main.go` + `cmd`)
   - instantiate adapters
   - inject them into application services
   - select runtime configuration/profile/environment

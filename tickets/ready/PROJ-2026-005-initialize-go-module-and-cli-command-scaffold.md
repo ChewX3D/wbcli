@@ -18,7 +18,7 @@ A buildable Go CLI skeleton exists with clear package boundaries (`cmd`, `intern
 
 Acceptance Criteria:
 - [ ] `go.mod` and `go.sum` are committed with module path and pinned dependencies.
-- [ ] `cmd/wbcli` builds and supports `wbcli --help` with `keys` and `order` command groups stubbed.
+- [ ] Root package builds and supports `wbcli --help` with `keys` and `order` command groups stubbed.
 - [ ] Project layout includes baseline packages matching architecture in `README.md`.
 - [ ] A `make build` or equivalent documented command builds the CLI locally.
 - [ ] Initial README usage section is updated for local build/run.
