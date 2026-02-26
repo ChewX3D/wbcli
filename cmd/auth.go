@@ -8,32 +8,24 @@ import (
 
 func newAuthCmd() *cobra.Command {
 	authCmd := &cobra.Command{
-		Use:     "auth",
-		Aliases: []string{"keys"},
-		Short:   "Manage authentication credentials",
-		Long:    "Manage WhiteBIT API authentication credentials by profile.",
+		Use:   "auth",
+		Short: "Manage authentication credentials",
+		Long:  "Manage WhiteBIT API authentication credentials by profile.",
 		RunE: func(command *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return fmt.Errorf("unknown command %q for %q", args[0], command.CommandPath())
+			}
+
 			return command.Help()
 		},
 	}
 
-	authCmd.AddCommand(newAuthSetCmd())
+	authCmd.AddCommand(newAuthLoginCmd())
+	authCmd.AddCommand(newAuthUseCmd())
 	authCmd.AddCommand(newAuthListCmd())
-	authCmd.AddCommand(newAuthRemoveCmd())
+	authCmd.AddCommand(newAuthLogoutCmd())
+	authCmd.AddCommand(newAuthCurrentCmd())
 	authCmd.AddCommand(newAuthTestCmd())
 
 	return authCmd
-}
-
-type authProfileOptions struct {
-	Profile string
-}
-
-func addProfileFlag(command *cobra.Command, options *authProfileOptions) {
-	command.Flags().StringVar(&options.Profile, "profile", "default", "credential profile name")
-}
-
-func writeNotImplemented(command *cobra.Command, action string, profile string) error {
-	_, err := fmt.Fprintf(command.OutOrStdout(), "wbcli auth %s is not implemented yet (profile=%s)\n", action, profile)
-	return err
 }

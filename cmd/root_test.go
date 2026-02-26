@@ -6,18 +6,25 @@ import (
 	"testing"
 )
 
-func executeCommand(args ...string) (string, string, error) {
+func executeCommandWithInput(input string, args ...string) (string, string, error) {
 	command := NewRootCmdForTest()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
 	command.SetOut(stdout)
 	command.SetErr(stderr)
+	if input != "" {
+		command.SetIn(strings.NewReader(input))
+	}
 	command.SetArgs(args)
 
 	err := command.Execute()
 
 	return stdout.String(), stderr.String(), err
+}
+
+func executeCommand(args ...string) (string, string, error) {
+	return executeCommandWithInput("", args...)
 }
 
 func TestRootHelpShowsMainGroups(t *testing.T) {
@@ -42,22 +49,46 @@ func TestUnknownCommandReturnsError(t *testing.T) {
 	}
 }
 
-func TestAuthSetRequiresSecrets(t *testing.T) {
-	_, _, err := executeCommand("auth", "set", "--profile", "default")
+func TestLegacyAuthSetCommandRemoved(t *testing.T) {
+	_, _, err := executeCommand("auth", "set")
 	if err == nil {
-		t.Fatal("expected validation error")
+		t.Fatal("expected unknown command error")
 	}
-	if !strings.Contains(err.Error(), "--api-key is required") {
+	if !strings.Contains(err.Error(), "unknown command \"set\"") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestLegacyKeysAliasStillWorks(t *testing.T) {
-	_, _, err := executeCommand("keys", "set", "--profile", "default")
+func TestLegacyKeysAliasRemoved(t *testing.T) {
+	_, _, err := executeCommand("keys", "set")
 	if err == nil {
-		t.Fatal("expected validation error")
+		t.Fatal("expected unknown command error")
 	}
-	if !strings.Contains(err.Error(), "--api-key is required") {
+	if !strings.Contains(err.Error(), "unknown command \"keys\"") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthLoginRequiresProfile(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, _, err := executeCommandWithInput("key\nsecret\n", "auth", "login")
+	if err == nil {
+		t.Fatal("expected profile validation error")
+	}
+	if !strings.Contains(err.Error(), "required flag") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthLoginRejectsInvalidStdinContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, _, err := executeCommandWithInput("only-key\n", "auth", "login", "--profile", "dev")
+	if err == nil {
+		t.Fatal("expected stdin parsing error")
+	}
+	if !strings.Contains(err.Error(), "exactly two non-empty lines") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
