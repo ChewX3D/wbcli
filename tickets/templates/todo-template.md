@@ -1,0 +1,1 @@
+- [ ] <short action> | Owner: <name> | Ticket: <ID> | Due: <YYYY-MM-DD>

@@ -23,8 +23,10 @@ This repository currently defines the project plan and operating docs for:
   - generate and place a range of limit orders from `start` to `end` with `step`
   - amount modes:
     - constant amount per step
-    - arithmetic scaling by step index
-    - geometric scaling (optional extension)
+    - arithmetic progression (`x1 x2 x3 ...`)
+    - geometric progression (`x1 x2 x4 x8 ...`)
+    - capped geometric progression (risk cap)
+    - optional later variants: fibonacci, custom multiplier list
   - `--dry-run` preview before submission
 
 ## Docs
@@ -32,6 +34,7 @@ This repository currently defines the project plan and operating docs for:
 - [Product + CLI design](docs/cli-design.md)
 - [WhiteBIT API integration notes](docs/whitebit-integration.md)
 - [Project operating system / workflow rules](AGENTS.md)
+- [Ticket workflow and commands](tickets/README.md)
 
 ## Suggested Build Direction
 

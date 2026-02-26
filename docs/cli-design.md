@@ -67,10 +67,31 @@ whitbit order range \
 ### Range Amount Modes
 
 - `constant`: `amount_i = base_amount`
-- `arithmetic`: `amount_i = base_amount + i * delta_amount`
-- `geometric`: `amount_i = base_amount * ratio^i` (optional, useful for aggressive laddering)
+- `arithmetic`: `amount_i = base_amount * (start_multiplier + i * step_multiplier)`
+- `geometric`: `amount_i = base_amount * ratio^i`
+- `fibonacci`: `amount_i = base_amount * fib(i+1)` where multipliers are `1, 1, 2, 3, 5, ...`
+- `capped-geometric`: same as geometric but hard-capped with `max_multiplier`
+- `custom-list`: explicit multipliers list, for example `1,1.5,2,2.5,3`
 
 `i` is zero-based step index.
+
+Examples:
+
+- arithmetic progression (`x1 x2 x3 x4 x5...`):
+  - `--amount-mode arithmetic --start-multiplier 1 --step-multiplier 1`
+- geometric progression (`x1 x2 x4 x8...`):
+  - `--amount-mode geometric --ratio 2`
+- bounded geometric (safer):
+  - `--amount-mode capped-geometric --ratio 2 --max-multiplier 4`
+
+Recommended MVP set:
+
+1. `constant`
+2. `arithmetic`
+3. `geometric`
+4. `capped-geometric`
+
+`fibonacci` and `custom-list` can be Phase 2, but both are useful when tuning exposure curves.
 
 ### Range Safety Controls
 

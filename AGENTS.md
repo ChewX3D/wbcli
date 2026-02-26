@@ -25,6 +25,14 @@ Use these roles even on a one-person team (one person may hold multiple roles):
 
 Every non-trivial change needs a ticket.
 
+Repository implementation:
+
+- ticket files live under `tickets/<status>/`
+- generated board is `tickets/board.md`
+- create ticket via `./scripts/tickets/new.sh`
+- move ticket via `./scripts/tickets/move.sh`
+- rebuild board via `./scripts/tickets/board.sh`
+
 Required fields:
 
 - `ID`: `PROJ-YYYY-NNN` (example: `CORE-2026-014`)
