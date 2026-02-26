@@ -20,8 +20,8 @@ Acceptance Criteria:
 - [ ] CLI supports session unlock TTL for credential reads (for example 15 minutes) with explicit lock command.
 - [ ] Secrets are held in memory only as long as needed for signing and are zeroed where practical.
 - [ ] Logs and error outputs redact API key, payload, and signature values.
-- [ ] `wbcli keys rotate` workflow documents and validates safe cutover from old key to new key.
-- [ ] `wbcli keys revoke` flow removes local credential and prints exchange-side revoke checklist.
+- [ ] `wbcli auth rotate` workflow documents and validates safe cutover from old key to new key.
+- [ ] `wbcli auth revoke` flow removes local credential and prints exchange-side revoke checklist.
 - [ ] Tests cover TTL expiry, redaction guarantees, and rotation success/failure paths.
 
 Risks:
@@ -35,7 +35,7 @@ Rollout Plan:
 
 Rollback Plan:
 1. Disable session cache and force per-command credential prompt.
-2. Keep existing key commands while disabling rotation automation until stabilized.
+2. Keep existing auth commands while disabling rotation automation until stabilized.
 
 Status Notes:
 - 2026-02-26: Created in Backlog.

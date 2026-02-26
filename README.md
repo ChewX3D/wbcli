@@ -17,7 +17,7 @@ This repository currently defines the project plan and operating docs for:
 
 ## Planned Core Features
 
-- `keys`:
+- `auth`:
   - store API credentials in OS keychain/secret store where possible
   - never persist raw secrets in git-tracked files
   - support profile-based credentials (for multiple accounts/environments)

@@ -13,12 +13,12 @@ Provide a safe, scriptable CLI for WhiteBIT collateral trading with enough struc
 
 ## Command Model
 
-### `wbcli keys`
+### `wbcli auth`
 
-- `wbcli keys set --profile default --api-key <...> --api-secret <...>`
-- `wbcli keys list`
-- `wbcli keys remove --profile default`
-- `wbcli keys test --profile default`
+- `wbcli auth set --profile default --api-key <...> --api-secret <...>`
+- `wbcli auth list`
+- `wbcli auth remove --profile default`
+- `wbcli auth test --profile default`
 
 Implementation notes:
 
@@ -41,8 +41,8 @@ Implementation notes:
   - support short session unlock TTL for repeated commands
   - clear plaintext buffers after signing where practical
 - lifecycle policy:
-  - support key rotation workflow (`keys rotate`) with cutover validation
-  - support local credential revoke/delete (`keys revoke` / `keys remove`)
+  - support key rotation workflow (`auth rotate`) with cutover validation
+  - support local credential revoke/delete (`auth revoke` / `auth remove`)
   - prefer restricted exchange-side API key permissions and IP allowlist where supported
 
 ### `wbcli order place`

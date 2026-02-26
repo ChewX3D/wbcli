@@ -16,7 +16,7 @@ func newRootCmd() *cobra.Command {
 		Use:   "wbcli",
 		Short: "A safe CLI for WhiteBIT trading workflows",
 		Long: `wbcli is a CLI for WhiteBIT collateral trading workflows.
-It provides safe command groups for key management and order execution.`,
+It provides safe command groups for auth credential management and order execution.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			isVerbose, err := cmd.Flags().GetBool(flagKeyVerbose)
 			if err != nil {
@@ -33,7 +33,7 @@ It provides safe command groups for key management and order execution.`,
 
 	root.PersistentFlags().BoolP(flagKeyVerbose, "v", false, "verbose logging")
 	root.AddCommand(newVersionCmd())
-	root.AddCommand(newKeysCmd())
+	root.AddCommand(newAuthCmd())
 	root.AddCommand(newOrderCmd())
 
 	return root

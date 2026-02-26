@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 func newKeysRemoveCmd() *cobra.Command {
-	options := &keysProfileOptions{}
+	options := &authProfileOptions{}
 
 	command := &cobra.Command{
 		Use:   "remove",

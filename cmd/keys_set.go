@@ -7,7 +7,7 @@ import (
 )
 
 type keysSetOptions struct {
-	keysProfileOptions
+	authProfileOptions
 	APIKey    string
 	APISecret string
 }
@@ -30,7 +30,7 @@ func newKeysSetCmd() *cobra.Command {
 		},
 	}
 
-	addProfileFlag(command, &options.keysProfileOptions)
+	addProfileFlag(command, &options.authProfileOptions)
 	command.Flags().StringVar(&options.APIKey, "api-key", "", "whitebit api key")
 	command.Flags().StringVar(&options.APISecret, "api-secret", "", "whitebit api secret")
 

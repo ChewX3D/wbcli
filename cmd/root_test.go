@@ -26,8 +26,8 @@ func TestRootHelpShowsMainGroups(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !strings.Contains(stdout, "keys") || !strings.Contains(stdout, "order") {
-		t.Fatalf("expected keys and order in help output, got: %q", stdout)
+	if !strings.Contains(stdout, "auth") || !strings.Contains(stdout, "order") {
+		t.Fatalf("expected auth and order in help output, got: %q", stdout)
 	}
 
 	if stderr != "" {
@@ -42,7 +42,17 @@ func TestUnknownCommandReturnsError(t *testing.T) {
 	}
 }
 
-func TestKeysSetRequiresSecrets(t *testing.T) {
+func TestAuthSetRequiresSecrets(t *testing.T) {
+	_, _, err := executeCommand("auth", "set", "--profile", "default")
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+	if !strings.Contains(err.Error(), "--api-key is required") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLegacyKeysAliasStillWorks(t *testing.T) {
 	_, _, err := executeCommand("keys", "set", "--profile", "default")
 	if err == nil {
 		t.Fatal("expected validation error")

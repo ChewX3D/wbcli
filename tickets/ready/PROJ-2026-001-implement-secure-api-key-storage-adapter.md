@@ -14,14 +14,14 @@ Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
 
 Outcome:
-`wbcli keys` commands manage credentials via OS secret storage with profile isolation and safe error handling, aligned with encryption and access hardening tickets.
+`wbcli auth` commands manage credentials via OS secret storage with profile isolation and safe error handling, aligned with encryption and access hardening tickets.
 
 Acceptance Criteria:
-- [ ] `wbcli keys set/list/remove/test` commands are implemented.
+- [ ] `wbcli auth set/list/remove/test` commands are implemented.
 - [ ] API key/secret are written to secure storage, never persisted in repo-tracked files.
 - [ ] Storage backend preference is enforced (`os-keychain` first, fallback backend from PROJ-2026-014 only when needed).
 - [ ] Command input supports non-echo secret entry to avoid shell history leakage.
-- [ ] `keys test` performs authenticated connectivity check without printing sensitive headers.
+- [ ] `auth test` performs authenticated connectivity check without printing sensitive headers.
 - [ ] Unit tests cover success, missing profile, missing secret backend, and permission denied cases.
 
 Risks:

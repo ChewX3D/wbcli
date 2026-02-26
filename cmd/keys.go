@@ -6,33 +6,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newKeysCmd() *cobra.Command {
-	keysCmd := &cobra.Command{
-		Use:   "keys",
-		Short: "Manage API credential profiles",
-		Long:  "Manage API credentials by profile for secure WhiteBIT API usage.",
+func newAuthCmd() *cobra.Command {
+	authCmd := &cobra.Command{
+		Use:     "auth",
+		Aliases: []string{"keys"},
+		Short:   "Manage authentication credentials",
+		Long:    "Manage WhiteBIT API authentication credentials by profile.",
 		RunE: func(command *cobra.Command, args []string) error {
 			return command.Help()
 		},
 	}
 
-	keysCmd.AddCommand(newKeysSetCmd())
-	keysCmd.AddCommand(newKeysListCmd())
-	keysCmd.AddCommand(newKeysRemoveCmd())
-	keysCmd.AddCommand(newKeysTestCmd())
+	authCmd.AddCommand(newKeysSetCmd())
+	authCmd.AddCommand(newKeysListCmd())
+	authCmd.AddCommand(newKeysRemoveCmd())
+	authCmd.AddCommand(newKeysTestCmd())
 
-	return keysCmd
+	return authCmd
 }
 
-type keysProfileOptions struct {
+type authProfileOptions struct {
 	Profile string
 }
 
-func addProfileFlag(command *cobra.Command, options *keysProfileOptions) {
+func addProfileFlag(command *cobra.Command, options *authProfileOptions) {
 	command.Flags().StringVar(&options.Profile, "profile", "default", "credential profile name")
 }
 
 func writeNotImplemented(command *cobra.Command, action string, profile string) error {
-	_, err := fmt.Fprintf(command.OutOrStdout(), "wbcli keys %s is not implemented yet (profile=%s)\n", action, profile)
+	_, err := fmt.Fprintf(command.OutOrStdout(), "wbcli auth %s is not implemented yet (profile=%s)\n", action, profile)
 	return err
 }

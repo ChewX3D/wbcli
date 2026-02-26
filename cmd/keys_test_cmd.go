@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 func newKeysTestCmd() *cobra.Command {
-	options := &keysProfileOptions{}
+	options := &authProfileOptions{}
 
 	command := &cobra.Command{
 		Use:   "test",

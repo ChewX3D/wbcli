@@ -11,7 +11,7 @@ func newKeysListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List configured credential profiles",
 		RunE: func(command *cobra.Command, args []string) error {
-			_, err := fmt.Fprintln(command.OutOrStdout(), "wbcli keys list is not implemented yet")
+			_, err := fmt.Fprintln(command.OutOrStdout(), "wbcli auth list is not implemented yet")
 			return err
 		},
 	}
