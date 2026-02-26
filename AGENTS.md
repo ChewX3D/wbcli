@@ -49,6 +49,8 @@ Rules:
 - no ticket ID, no merge (except emergency hotfix with retroactive ticket)
 - each PR references exactly one primary ticket
 - status changes must include a short note
+- when implementing ticket scope, immediately mark completed acceptance/test checklist points as done (`[x]`) in the same change set
+- do not leave completed ticket points unchecked; keep ticket progress state accurate at all times
 
 ## Backlog And Todo Workflow
 

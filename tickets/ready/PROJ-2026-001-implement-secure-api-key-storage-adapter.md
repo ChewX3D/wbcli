@@ -111,38 +111,38 @@ Dependencies:
 - PROJ-2026-014 for explicit fallback backend policy (must not be silently auto-enabled here)
 
 Acceptance Criteria:
-- [ ] `auth login` input mode is secure by default:
-  - [ ] `--profile` is required and must be provided explicitly.
-  - [ ] implicit default profile selection is prohibited.
-  - [ ] API key and API secret are accepted only through stdin payload.
-  - [ ] no `--api-key` flag is supported.
-  - [ ] plaintext `--api-secret` flag is not used.
-  - [ ] prompt-based secret input is not supported.
-  - [ ] plaintext secret flags are prohibited for all auth commands (including legacy command paths).
-  - [ ] `auth login` fails with clear error when stdin payload is missing or empty.
-  - [ ] legacy `auth set` command is removed from CLI command tree and help output.
-  - [ ] stdin credential parsing contract is explicit and deterministic:
-    - [ ] read stdin input once with bounded maximum size.
-    - [ ] accept exactly two non-empty logical lines: first `api_key`, second `api_secret`.
-    - [ ] trim exactly one trailing line ending (`\\n` or `\\r\\n`) for common shell piping compatibility.
-    - [ ] reject empty effective key or secret value after parsing.
-    - [ ] reject missing second line and reject extra lines.
-    - [ ] parsing failures must not echo or log raw stdin content.
+- [x] `auth login` input mode is secure by default:
+  - [x] `--profile` is required and must be provided explicitly.
+  - [x] implicit default profile selection is prohibited.
+  - [x] API key and API secret are accepted only through stdin payload.
+  - [x] no `--api-key` flag is supported.
+  - [x] plaintext `--api-secret` flag is not used.
+  - [x] prompt-based secret input is not supported.
+  - [x] plaintext secret flags are prohibited for all auth commands (including legacy command paths).
+  - [x] `auth login` fails with clear error when stdin payload is missing or empty.
+  - [x] legacy `auth set` command is removed from CLI command tree and help output.
+  - [x] stdin credential parsing contract is explicit and deterministic:
+    - [x] read stdin input once with bounded maximum size.
+    - [x] accept exactly two non-empty logical lines: first `api_key`, second `api_secret`.
+    - [x] trim exactly one trailing line ending (`\\n` or `\\r\\n`) for common shell piping compatibility.
+    - [x] reject empty effective key or secret value after parsing.
+    - [x] reject missing second line and reject extra lines.
+    - [x] parsing failures must not echo or log raw stdin content.
 - [ ] `auth login` validation and storage behavior:
-  - [ ] invalid/empty profile fails with clear error.
-  - [ ] profile format is validated in `auth login` using charset `[a-zA-Z0-9._-]` and length `1..64`.
-  - [ ] profile values with leading/trailing spaces are rejected.
-  - [ ] no profile normalization is allowed; invalid profile input fails hard with explicit error.
+  - [x] invalid/empty profile fails with clear error.
+  - [x] profile format is validated in `auth login` using charset `[a-zA-Z0-9._-]` and length `1..64`.
+  - [x] profile values with leading/trailing spaces are rejected.
+  - [x] no profile normalization is allowed; invalid profile input fails hard with explicit error.
   - [ ] profile format validation scope for this ticket is `auth login` only (profile creation path).
-  - [ ] empty API key/secret fails with clear error.
-  - [ ] if credentials already exist for the profile, overwrite is blocked unless explicitly confirmed.
-  - [ ] non-interactive overwrite requires explicit `--force`; otherwise fail with actionable error.
+  - [x] empty API key/secret fails with clear error.
+  - [x] if credentials already exist for the profile, overwrite is blocked unless explicitly confirmed.
+  - [x] non-interactive overwrite requires explicit `--force`; otherwise fail with actionable error.
   - [ ] interactive overwrite requires explicit confirmation prompt.
-  - [ ] overwrite flow must never print old/new secret values.
-  - [ ] credentials are written to `os-keychain` only.
-  - [ ] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
-  - [ ] fallback to insecure storage (plaintext file/env/arg) is strictly prohibited.
-  - [ ] any non-keychain fallback must be explicitly configured and is out of scope for this ticket.
+  - [x] overwrite flow must never print old/new secret values.
+  - [x] credentials are written to `os-keychain` only.
+  - [x] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
+  - [x] fallback to insecure storage (plaintext file/env/arg) is strictly prohibited.
+  - [x] any non-keychain fallback must be explicitly configured and is out of scope for this ticket.
 - [ ] Platform support requirements:
   - [ ] must work on macOS.
   - [ ] must work on Linux.
@@ -150,19 +150,19 @@ Acceptance Criteria:
   - [ ] security verification must run on both macOS and Linux for auth commands (`login/use/list/logout/current`; `test` when implemented).
   - [ ] platform checks must include keychain unavailable/permission-denied scenarios per OS.
   - [ ] platform checks must include redaction and config-boundary assertions per OS.
-- [ ] `auth use` behavior:
-  - [ ] selects active profile from existing profile set.
-  - [ ] fails clearly if profile is missing or has no stored credentials.
-  - [ ] updates only non-secret active-profile metadata in config.
-- [ ] `auth list` behavior:
-  - [ ] lists configured profiles and non-secret metadata only.
-  - [ ] never prints API secret, payload, signature, or full API key.
-- [ ] `auth logout` behavior:
-  - [ ] removes credential record for a profile.
-  - [ ] operation is idempotent (missing profile does not leak internals and is handled cleanly).
-- [ ] `auth current` behavior:
-  - [ ] prints only current active profile and safe metadata.
-  - [ ] never prints secret material.
+- [x] `auth use` behavior:
+  - [x] selects active profile from existing profile set.
+  - [x] fails clearly if profile is missing or has no stored credentials.
+  - [x] updates only non-secret active-profile metadata in config.
+- [x] `auth list` behavior:
+  - [x] lists configured profiles and non-secret metadata only.
+  - [x] never prints API secret, payload, signature, or full API key.
+- [x] `auth logout` behavior:
+  - [x] removes credential record for a profile.
+  - [x] operation is idempotent (missing profile does not leak internals and is handled cleanly).
+- [x] `auth current` behavior:
+  - [x] prints only current active profile and safe metadata.
+  - [x] never prints secret material.
 - [ ] `auth test` behavior:
   - [ ] reads credentials from secure store and performs authenticated connectivity check.
   - [ ] error mapping distinguishes auth, transport, and unknown failures.
@@ -174,21 +174,21 @@ Acceptance Criteria:
   - [ ] all auth commands use shared redaction helpers (no per-command ad-hoc masking logic).
   - [ ] failures and debug output preserve diagnostic value without leaking sensitive material.
 - [ ] Secret memory-lifetime requirements:
-  - [ ] secret is held in memory only for minimal required path (read -> validate -> store/sign -> clear).
-  - [ ] use `[]byte` for sensitive secret handling where practical.
-  - [ ] clear sensitive buffers after use (best-effort wipe) and avoid unnecessary copies.
+  - [x] secret is held in memory only for minimal required path (read -> validate -> store/sign -> clear).
+  - [x] use `[]byte` for sensitive secret handling where practical.
+  - [x] clear sensitive buffers after use (best-effort wipe) and avoid unnecessary copies.
   - [ ] avoid propagating secret values into long-lived structs, error objects, or log contexts.
-- [ ] Persistence boundaries:
-  - [ ] no secret material is written to repo-tracked files or plain profile config.
-  - [ ] profile config stores metadata only (profile name, timestamps, backend marker, active profile).
-  - [ ] on macOS/Linux, config path is `~/.wbcli/config.yaml`.
-  - [ ] config file at `~/.wbcli/config.yaml` is created/updated with owner-only permissions (`0600`).
+- [x] Persistence boundaries:
+  - [x] no secret material is written to repo-tracked files or plain profile config.
+  - [x] profile config stores metadata only (profile name, timestamps, backend marker, active profile).
+  - [x] on macOS/Linux, config path is `~/.wbcli/config.yaml`.
+  - [x] config file at `~/.wbcli/config.yaml` is created/updated with owner-only permissions (`0600`).
 - [ ] Unit tests and command tests include success and negative paths for each command part.
 - [ ] Documentation requirements for implementation:
-  - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
-  - [ ] README must include stdin-only login examples for local shell usage and automation/CI usage.
-  - [ ] README must explicitly warn not to pass credentials via command arguments.
-  - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/list/logout/current/test`.
+  - [x] README must explain auth secret input modes in simple, easy-to-understand language.
+  - [x] README must include stdin-only login examples for local shell usage and automation/CI usage.
+  - [x] README must explicitly warn not to pass credentials via command arguments.
+  - [x] Cobra command help must include practical `Example` blocks for `auth login/use/list/logout/current/test`.
   - [ ] README must include operational key-hygiene guidance:
     - [ ] one API key per profile/environment.
     - [ ] least-privilege key scopes for WhiteBIT permissions.
@@ -199,16 +199,16 @@ Acceptance Criteria:
 Test Matrix:
 - [ ] `auth login`: stdin credential payload success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
 - [ ] stdin parsing behavior:
-  - [ ] valid two-line stdin payload (`api_key` + `api_secret`) succeeds.
-  - [ ] single trailing newline is handled per contract.
-  - [ ] empty stdin fails with clear error.
-  - [ ] missing second line fails with clear error.
-  - [ ] extra lines after second credential line fail with clear error.
-  - [ ] oversized stdin input fails with clear error.
+  - [x] valid two-line stdin payload (`api_key` + `api_secret`) succeeds.
+  - [x] single trailing newline is handled per contract.
+  - [x] empty stdin fails with clear error.
+  - [x] missing second line fails with clear error.
+  - [x] extra lines after second credential line fail with clear error.
+  - [x] oversized stdin input fails with clear error.
   - [ ] stdin parse errors do not leak raw input to stdout/stderr/logs.
-- [ ] command migration behavior:
-  - [ ] `wbcli auth set ...` is unavailable after migration and returns unknown-command error.
-  - [ ] `wbcli auth login ...` and `wbcli auth use ...` are available and shown in help output.
+- [x] command migration behavior:
+  - [x] `wbcli auth set ...` is unavailable after migration and returns unknown-command error.
+  - [x] `wbcli auth login ...` and `wbcli auth use ...` are available and shown in help output.
 - [ ] overwrite control behavior:
   - [ ] new profile create path succeeds without overwrite confirmation.
   - [ ] existing profile update without confirmation/`--force` is rejected.
@@ -219,8 +219,8 @@ Test Matrix:
   - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
   - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
 - [ ] config boundary behavior:
-  - [ ] verify `~/.wbcli/config.yaml` contains metadata only and no secret values.
-  - [ ] verify `~/.wbcli/config.yaml` permissions are `0600` on macOS/Linux.
+  - [x] verify `~/.wbcli/config.yaml` contains metadata only and no secret values.
+  - [x] verify `~/.wbcli/config.yaml` permissions are `0600` on macOS/Linux.
 - [ ] platform compatibility:
   - [ ] run `auth login/use/list/logout/current` verification on macOS.
   - [ ] run `auth login/use/list/logout/current` verification on Linux.
@@ -238,7 +238,7 @@ Test Matrix:
   - [ ] assert shared redaction helper is used by all auth command output paths.
   - [ ] assert sensitive values are absent from command output and logs in success and error scenarios.
 - [ ] secret memory contract:
-  - [ ] verify secret buffers are cleared after use on primary paths.
+  - [x] verify secret buffers are cleared after use on primary paths.
   - [ ] verify errors and debug paths do not retain or expose secret values.
 
 Risks:
