@@ -118,6 +118,10 @@ Acceptance Criteria:
   - [ ] empty API key/secret fails with clear error.
   - [ ] credentials are written to `os-keychain` only.
   - [ ] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
+- [ ] Platform support requirements:
+  - [ ] must work on macOS.
+  - [ ] must work on Linux.
+  - [ ] Windows support is optional for this ticket (best-effort only).
 - [ ] `auth use` behavior:
   - [ ] selects active profile from existing profile set.
   - [ ] fails clearly if profile is missing or has no stored credentials.
@@ -143,6 +147,10 @@ Acceptance Criteria:
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing key, empty secret, keychain unavailable, permission denied.
+- [ ] platform compatibility:
+  - [ ] run `auth login/use/profiles list/logout/current` verification on macOS.
+  - [ ] run `auth login/use/profiles list/logout/current` verification on Linux.
+  - [ ] Windows verification is optional and recorded only if performed.
 - [ ] `auth use`: existing profile selection, missing profile failure, active-profile metadata update.
 - [ ] `auth profiles list`: returns metadata-only rows, redaction assertions, empty state.
 - [ ] `auth logout`: existing profile removal, missing profile idempotency, permission denied.
@@ -174,6 +182,10 @@ Verification Evidence (Required In Review):
 - `go build .`
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
+- platform evidence:
+  - macOS pass evidence is required
+  - Linux pass evidence is required
+  - Windows evidence is optional
 
 Rollback Plan:
 1. Disable write operations and keep read-only mode if backend instability appears.
@@ -187,3 +199,4 @@ Status Notes:
 - 2026-02-26: Updated command model examples (`auth login/use/profiles list/logout/current`) and reordered rollout to start from `auth login`.
 - 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
 - 2026-02-26: Clarified `auth login` as independent app service and moved `auth test` to final gated phase after WhiteBIT client readiness.
+- 2026-02-26: Set platform acceptance rule: macOS and Linux required, Windows optional.
