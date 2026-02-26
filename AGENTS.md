@@ -149,6 +149,21 @@ Merge policy:
 - `infra/ci`: dry-run in non-prod path where possible
 - `hotfix`: minimal reproducer test added within 24 hours post-fix
 
+## CLI Installability Requirement
+
+VERY IMPORTANT (MANDATORY):
+
+- CLI must remain installable directly from repository root using:
+  - `go install github.com/ChewX3D/wbcli@latest`
+- changes must not break root package build/install flow
+- entrypoint and wiring for installable CLI must stay rooted in top-level `main.go`
+
+Required verification for CLI-impacting changes:
+
+- run `go build .`
+- run `go test ./...`
+- run `go install github.com/ChewX3D/wbcli@latest` (or equivalent local validation in restricted environments)
+
 ## Go Code Style (Google)
 
 VERY IMPORTANT (MANDATORY):
