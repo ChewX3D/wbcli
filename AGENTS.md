@@ -149,6 +149,51 @@ Merge policy:
 - `infra/ci`: dry-run in non-prod path where possible
 - `hotfix`: minimal reproducer test added within 24 hours post-fix
 
+## Go Code Style (Google)
+
+For all Go code in this repository, follow the Google Go style guides in full:
+
+- Go Style Guide: https://google.github.io/styleguide/go/
+- Style Decisions: https://google.github.io/styleguide/go/decisions
+- Best Practices: https://google.github.io/styleguide/go/best-practices
+
+These references are the source of truth. If this repo guidance and Google guidance differ, Google Go guidance wins unless a repo-specific exception is explicitly documented.
+
+Required implementation rules for day-to-day work:
+
+- Formatting:
+  - run `gofmt` on changed Go files before commit
+  - keep imports gofmt-compatible and clean (no unused imports)
+  - keep package layout simple and cohesive; one package responsibility per directory
+- Naming and declarations:
+  - use idiomatic Go names (`MixedCaps`, no underscores in identifiers)
+  - use clear package names; avoid stuttered APIs (`foo.FooType`)
+  - keep exported identifiers documented with comments that start with the identifier name
+  - use consistent initialisms (`ID`, `HTTP`, `URL`, `JSON`)
+- Error handling:
+  - check and handle every returned error; do not ignore errors silently
+  - wrap errors with context using `%w` when propagating (`fmt.Errorf("...: %w", err)`)
+  - keep error strings lowercase and without trailing punctuation
+  - reserve `panic` for truly unrecoverable programmer/runtime faults, not normal control flow
+- Context and API shape:
+  - pass `context.Context` as the first argument (`ctx context.Context`) when cancellation/deadlines are relevant
+  - do not store `Context` in structs
+  - accept interfaces where useful, but return concrete types from constructors/functions
+  - design zero-value-safe types where practical
+- Concurrency:
+  - make goroutine ownership/lifecycle explicit and prevent leaks
+  - close channels only from the sender side; document channel ownership
+  - protect shared mutable state with synchronization and avoid data races
+- Tests:
+  - prefer table-driven tests for multi-case logic
+  - make failures actionable (`got` vs `want` in error messages)
+  - keep tests deterministic; avoid time-based flakiness
+  - include coverage for success paths, error paths, and edge cases
+- Documentation:
+  - add package comments for non-trivial packages
+  - document exported behavior, invariants, side effects, and concurrency expectations
+  - keep examples/docs synchronized with current CLI/API behavior
+
 ## Documentation Update Policy
 
 When behavior changes, update docs in the same change set:
