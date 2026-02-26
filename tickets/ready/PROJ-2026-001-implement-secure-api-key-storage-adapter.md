@@ -157,6 +157,11 @@ Acceptance Criteria:
   - [ ] redaction policy is enforced in both normal and verbose modes.
   - [ ] all auth commands use shared redaction helpers (no per-command ad-hoc masking logic).
   - [ ] failures and debug output preserve diagnostic value without leaking sensitive material.
+- [ ] Secret memory-lifetime requirements:
+  - [ ] secret is held in memory only for minimal required path (read -> validate -> store/sign -> clear).
+  - [ ] use `[]byte` for sensitive secret handling where practical.
+  - [ ] clear sensitive buffers after use (best-effort wipe) and avoid unnecessary copies.
+  - [ ] avoid propagating secret values into long-lived structs, error objects, or log contexts.
 - [ ] Persistence boundaries:
   - [ ] no secret material is written to repo-tracked files or plain profile config.
   - [ ] profile config stores metadata only (profile name, timestamps, backend marker, active profile).
@@ -190,6 +195,9 @@ Test Matrix:
 - [ ] redaction contract:
   - [ ] assert shared redaction helper is used by all auth command output paths.
   - [ ] assert sensitive values are absent from command output and logs in success and error scenarios.
+- [ ] secret memory contract:
+  - [ ] verify secret buffers are cleared after use on primary paths.
+  - [ ] verify errors and debug paths do not retain or expose secret values.
 
 Risks:
 - Secret backend availability differs by OS and CI environment.
@@ -203,6 +211,7 @@ Rollout Plan:
 3.1. Enforce metadata config path (`~/.wbcli/config.yaml`) and owner-only file mode (`0600`) on macOS/Linux.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
+5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
 6. Implement `auth profiles list` metadata-only read path with redaction tests.
 7. Implement `auth use` active-profile selection path with metadata-only update tests.
 8. Implement `auth logout` delete path and idempotency behavior with tests.
@@ -224,6 +233,7 @@ Verification Evidence (Required In Review):
 - explicit proof that `~/.wbcli/config.yaml` uses `0600` permissions on macOS/Linux
 - explicit proof that keychain-unavailable path fails closed with no implicit fallback write
 - explicit proof that redaction contract is enforced in normal and verbose modes
+- explicit proof that secret memory-lifetime controls are implemented (minimal lifetime, cleared buffers, no secret in errors/logs)
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
 - platform evidence:
@@ -249,3 +259,4 @@ Status Notes:
 - 2026-02-26: Added explicit-profile rule (no implicit default profile; user must set profile explicitly).
 - 2026-02-26: Added security boundary for metadata config path `~/.wbcli/config.yaml` with required `0600` permissions and no secret persistence.
 - 2026-02-26: Added strict profile validation rule for `auth login` only (no normalization; hard errors for invalid values).
+- 2026-02-26: Added secret memory-lifetime security point (minimal in-memory lifetime, best-effort buffer wipe, and no secret propagation in errors/logs).
