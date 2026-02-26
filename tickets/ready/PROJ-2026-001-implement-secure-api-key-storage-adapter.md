@@ -146,6 +146,11 @@ Acceptance Criteria:
   - [ ] error mapping distinguishes auth, transport, and unknown failures.
   - [ ] output and logs never expose `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`, API secret, or full API key.
   - [ ] implemented last, after PROJ-2026-002 is ready.
+- [ ] Redaction policy requirements:
+  - [ ] API secret, payload, signature, and full API key are never printed to stdout/stderr/logs.
+  - [ ] redaction policy is enforced in both normal and verbose modes.
+  - [ ] all auth commands use shared redaction helpers (no per-command ad-hoc masking logic).
+  - [ ] failures and debug output preserve diagnostic value without leaking sensitive material.
 - [ ] Persistence boundaries:
   - [ ] no secret material is written to repo-tracked files or plain profile config.
   - [ ] profile config stores metadata only (profile name, timestamps, backend marker).
@@ -171,6 +176,9 @@ Test Matrix:
 - [ ] `auth current`: correct active profile output, empty state behavior, redaction assertions.
 - [ ] `auth test`: valid credentials, auth failure, network timeout, backend unavailable, redaction in error output.
 - [ ] cross-cutting: verify no sensitive value appears in stdout/stderr/log buffers under verbose and non-verbose modes.
+- [ ] redaction contract:
+  - [ ] assert shared redaction helper is used by all auth command output paths.
+  - [ ] assert sensitive values are absent from command output and logs in success and error scenarios.
 
 Risks:
 - Secret backend availability differs by OS and CI environment.
@@ -187,6 +195,7 @@ Rollout Plan:
 7. Implement `auth use` active-profile selection path with metadata-only update tests.
 8. Implement `auth logout` delete path and idempotency behavior with tests.
 9. Implement `auth current` metadata read path with safe output tests.
+9.1. Implement shared auth redaction helper and wire all auth command outputs/logging through it.
 10. Add command-level docs/help text updates for secure usage.
 10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
 10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
@@ -200,6 +209,7 @@ Verification Evidence (Required In Review):
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
 - explicit proof that keychain-unavailable path fails closed with no implicit fallback write
+- explicit proof that redaction contract is enforced in normal and verbose modes
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
 - platform evidence:
@@ -220,4 +230,5 @@ Status Notes:
 - 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
 - 2026-02-26: Clarified `auth login` as independent app service and moved `auth test` to final gated phase after WhiteBIT client readiness.
 - 2026-02-26: Set platform acceptance rule: macOS and Linux required, Windows optional.
+- 2026-02-26: Added explicit redaction security point (shared helper, verbose-safe behavior, and leak-prevention evidence).
 - 2026-02-26: Added requirement to include practical usage examples directly in Cobra command help (`Example` field).
