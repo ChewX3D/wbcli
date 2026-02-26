@@ -115,6 +115,7 @@ Rules:
 - after local commit and before push, run `git pull --rebase origin main`
 - if pull introduces conflicts, resolve them locally, re-run required checks, then push
 - push only when local `main` is up to date with `origin/main`
+- always push immediately after each commit (do not batch local commits)
 
 ## Change Checklist And Review Standards
 
