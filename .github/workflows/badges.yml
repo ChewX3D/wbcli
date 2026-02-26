@@ -1,0 +1,110 @@
+name: Update Badges
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-badges
+  cancel-in-progress: true
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Compute coverage percent
+        run: |
+          go test ./... -coverprofile=coverage.out -covermode=atomic >/dev/null
+          COVERAGE=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%","",$3); printf "%.0f", ($3 + 0.5)}')
+          echo "COVERAGE=${COVERAGE}" >> "${GITHUB_ENV}"
+          rm -f coverage.out
+
+      - name: Build coverage badge JSON
+        run: |
+          pct=${COVERAGE%%.*}
+          color=red
+          if [ "${pct}" -ge 75 ]; then
+            color=brightgreen
+          elif [ "${pct}" -ge 65 ]; then
+            color=yellow
+          elif [ "${pct}" -ge 40 ]; then
+            color=orange
+          fi
+
+          tmpfile=$(mktemp)
+          jq -n \
+            --arg coverage "${COVERAGE}" \
+            --arg color "${color}" \
+            '{schemaVersion:1,label:"Coverage",message:($coverage + "%"),color:$color,cacheSeconds:300}' > "${tmpfile}"
+          echo "BADGE_JSON_COVERAGE=${tmpfile}" >> "${GITHUB_ENV}"
+
+      - name: Build binaries and calculate sizes
+        run: |
+          mkdir -p dist
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-amd64 ./cmd/wbcli
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-arm64 ./cmd/wbcli
+
+          size_amd64=$(wc -c < dist/wbcli-linux-amd64 | tr -d ' ')
+          size_arm64=$(wc -c < dist/wbcli-linux-arm64 | tr -d ' ')
+
+          echo "BINARY_SIZE_AMD64=${size_amd64}" >> "${GITHUB_ENV}"
+          echo "BINARY_SIZE_ARM64=${size_arm64}" >> "${GITHUB_ENV}"
+
+      - name: Build binary size badge JSON
+        run: |
+          format_size_mb() {
+            awk -v bytes="$1" 'BEGIN { printf "%.2f MB", bytes/1024/1024 }'
+          }
+
+          size_amd64="$(format_size_mb "${BINARY_SIZE_AMD64}")"
+          size_arm64="$(format_size_mb "${BINARY_SIZE_ARM64}")"
+
+          tmp_amd64=$(mktemp)
+          tmp_arm64=$(mktemp)
+
+          jq -n \
+            --arg size "${size_amd64}" \
+            '{schemaVersion:1,label:"Binary size (amd64)",message:$size,color:"informational",cacheSeconds:300}' > "${tmp_amd64}"
+
+          jq -n \
+            --arg size "${size_arm64}" \
+            '{schemaVersion:1,label:"Binary size (arm64)",message:$size,color:"informational",cacheSeconds:300}' > "${tmp_arm64}"
+
+          echo "BADGE_JSON_AMD64=${tmp_amd64}" >> "${GITHUB_ENV}"
+          echo "BADGE_JSON_ARM64=${tmp_arm64}" >> "${GITHUB_ENV}"
+
+      - name: Publish badges to main branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p configs/badges
+
+          cp "${BADGE_JSON_COVERAGE}" configs/badges/test-coverage.json
+          cp "${BADGE_JSON_AMD64}" configs/badges/binary-size-amd64.json
+          cp "${BADGE_JSON_ARM64}" configs/badges/binary-size-arm64.json
+          git add configs/badges/test-coverage.json configs/badges/binary-size-amd64.json configs/badges/binary-size-arm64.json
+
+          if git diff --cached --quiet; then
+            echo "No badge changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update badges [skip ci]"
+          git push origin main

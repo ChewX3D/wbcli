@@ -1,5 +1,9 @@
 # wbcli
 
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/test-coverage.json)](https://github.com/ChewX3D/wbcli/actions/workflows/badges.yml)
+![ARM size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/binary-size-arm64.json)
+![AMD size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/binary-size-amd64.json)
+
 Lightweight CLI project for placing WhiteBIT trading orders safely, with a design that can later be wrapped by a UI.
 
 ## Scope
