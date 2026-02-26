@@ -121,6 +121,12 @@ Acceptance Criteria:
   - [ ] `--api-secret-stdin` reads secret only from stdin, does not echo it, and fails with clear error on empty input.
   - [ ] prompt mode and stdin mode are mutually exclusive and produce clear validation errors if misused.
   - [ ] legacy `auth set` command is removed from CLI command tree and help output.
+  - [ ] `--api-secret-stdin` parsing contract is explicit and deterministic:
+    - [ ] read stdin input once with bounded maximum size.
+    - [ ] trim exactly one trailing line ending (`\\n` or `\\r\\n`) for common shell piping compatibility.
+    - [ ] reject empty effective value after trimming.
+    - [ ] reject multi-line input payloads.
+    - [ ] parsing failures must not echo or log raw stdin content.
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
   - [ ] profile format is validated in `auth login` using charset `[a-zA-Z0-9._-]` and length `1..64`.
@@ -191,6 +197,13 @@ Acceptance Criteria:
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
+- [ ] stdin parsing behavior:
+  - [ ] single-line stdin value succeeds.
+  - [ ] single trailing newline is handled per contract.
+  - [ ] empty stdin fails with clear error.
+  - [ ] multi-line stdin input fails with clear error.
+  - [ ] oversized stdin input fails with clear error.
+  - [ ] stdin parse errors do not leak raw input to stdout/stderr/logs.
 - [ ] command migration behavior:
   - [ ] `wbcli auth set ...` is unavailable after migration and returns unknown-command error.
   - [ ] `wbcli auth login ...` and `wbcli auth use ...` are available and shown in help output.
@@ -238,6 +251,7 @@ Rollout Plan:
 3.1. Enforce metadata config path (`~/.wbcli/config.yaml`) and owner-only file mode (`0600`) on macOS/Linux.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
 4.1. Remove legacy `auth set` command wiring and ensure `auth login` + `auth use` are the active entrypoints.
+4.2. Implement strict stdin parser contract for `--api-secret-stdin` (bounded read, newline handling, multi-line rejection, no-leak errors).
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
 5.2. Add credential overwrite guardrails (interactive confirm and non-interactive `--force` behavior) with leak-safe output handling.
@@ -267,6 +281,7 @@ Verification Evidence (Required In Review):
 - explicit proof that keychain-unavailable path fails closed with no implicit fallback write
 - explicit proof that redaction contract is enforced in normal and verbose modes
 - explicit proof that secret memory-lifetime controls are implemented (minimal lifetime, cleared buffers, no secret in errors/logs)
+- explicit proof that stdin parser contract is enforced (newline handling, empty/multiline/oversize rejection, no-leak errors)
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
 - README excerpt/evidence showing operational key-hygiene guidance (per-profile keys, least privilege, allowlist, rotation/revoke)
@@ -302,6 +317,7 @@ Status Notes:
 - 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
 - 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
 - 2026-02-26: Confirmed migration strategy for this project: remove legacy `auth set` and use `auth login` + `auth use` only.
+- 2026-02-26: Added strict `--api-secret-stdin` parser contract (bounded read, newline policy, multiline rejection, no-leak failures).
 
 Final Note (Mandatory):
 - add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.
