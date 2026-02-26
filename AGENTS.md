@@ -199,6 +199,75 @@ Required implementation rules for day-to-day work:
   - document exported behavior, invariants, side effects, and concurrency expectations
   - keep examples/docs synchronized with current CLI/API behavior
 
+## Go Deep Knowledge (Official go.dev)
+
+VERY IMPORTANT (MANDATORY):
+
+- these official Go references are required engineering context for this repository
+- when introducing complex behavior (concurrency, performance, memory, tooling, security), align implementation and reviews with these sources
+- if there is ambiguity, prefer the official go.dev references below over informal blog/forum guidance
+
+Primary references:
+
+- Language specification:
+  - https://go.dev/ref/spec
+- Memory model:
+  - https://go.dev/ref/mem
+- Data race detector:
+  - https://go.dev/doc/articles/race_detector
+- Diagnostics (profiles, traces, runtime stats, debugging):
+  - https://go.dev/doc/diagnostics
+- Garbage collector guide (cost model, escape analysis, tuning):
+  - https://go.dev/doc/gc-guide
+- Native fuzzing:
+  - https://go.dev/doc/security/fuzz
+- Module reference:
+  - https://go.dev/ref/mod
+- Dependency management:
+  - https://go.dev/doc/modules/managing-dependencies
+- Vulnerability management (`govulncheck`, vuln DB):
+  - https://go.dev/doc/security/vuln/
+- Release notes policy and version awareness:
+  - https://go.dev/doc/devel/release
+  - https://go.dev/doc/go1.25
+  - https://go.dev/doc/go1.26
+- Concurrency and cancellation patterns:
+  - https://go.dev/blog/context
+  - https://go.dev/blog/context-and-structs
+  - https://go.dev/blog/pipelines
+
+Mandatory engineering rules derived from these docs:
+
+- Concurrency correctness:
+  - any shared mutable state across goroutines must have explicit synchronization
+  - no intentional data races; `go test -race ./...` is required for concurrent logic changes
+  - design channel ownership/closure rules up front and document them in package-level comments
+- Context discipline:
+  - pass `context.Context` as first parameter when cancellation/deadlines are relevant
+  - do not store context in structs except rare, explicitly justified boundary cases
+  - use cancellation in fan-out/fan-in pipelines to prevent goroutine leaks
+- Memory and GC literacy:
+  - treat heap growth as a measurable budget, not a surprise side effect
+  - investigate allocations with profiles first; then inspect escapes with:
+    - `go build -gcflags=-m=3 <package>`
+  - tune `GOGC` and `GOMEMLIMIT` only with benchmark/profile evidence and documented rationale
+- Diagnostics-first performance work:
+  - no performance claims without data from profiles/traces/benchmarks
+  - prefer repeatable workflows (`go test -bench`, `pprof`, runtime trace) and commit evidence in PR notes
+- Testing beyond happy path:
+  - add fuzz tests for parser/normalizer/validation code paths exposed to untrusted or variable input
+  - keep fuzz targets deterministic and side-effect isolated
+- Module and supply-chain hygiene:
+  - maintain `go.mod`/`go.sum` via Go toolchain commands; do not hand-edit casually
+  - run `go mod tidy` after dependency-impacting changes
+  - configure `GOPRIVATE`/`GONOSUMDB` correctly for private modules
+- Security hygiene:
+  - run `govulncheck ./...` on dependency changes and before releases
+  - prioritize reachable vulnerabilities (call-graph relevant), not just raw CVE presence
+- Version-awareness:
+  - verify behavior against the targeted Go release notes when upgrading Go version
+  - when adopting new toolchain/runtime features, record minimum Go version constraints explicitly
+
 ## Architecture Standard (Hexagonal / Ports And Adapters)
 
 VERY IMPORTANT (MANDATORY):

@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    env:
+      COVERAGE_MIN_PERCENT: "20"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests with coverage
+        run: go test ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Enforce minimum coverage
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%","",$3); print $3}')
+          total_int=$(awk -v n="$total" 'BEGIN {printf "%d", n+0.5}')
+
+          echo "Total coverage: ${total}%"
+          echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Total: ${total}%" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Required minimum: ${COVERAGE_MIN_PERCENT}%" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$total_int" -lt "$COVERAGE_MIN_PERCENT" ]; then
+            echo "Coverage ${total}% is below required ${COVERAGE_MIN_PERCENT}%."
+            exit 1
+          fi
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-out
+          path: coverage.out
+          if-no-files-found: error
+
+  binary-size:
+    name: Binary Size (${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch: [amd64, arm64]
+    env:
+      GOOS: linux
+      CGO_ENABLED: "0"
+      MAX_BINARY_SIZE_BYTES: "15000000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build binary
+        run: |
+          mkdir -p dist
+          GOARCH=${{ matrix.goarch }} go build -trimpath -ldflags="-s -w" -o dist/wbcli-linux-${{ matrix.goarch }} ./cmd/wbcli
+
+      - name: Check binary size budget
+        run: |
+          bin="dist/wbcli-linux-${{ matrix.goarch }}"
+          size_bytes=$(wc -c < "$bin" | tr -d ' ')
+          size_mb=$(awk -v bytes="$size_bytes" 'BEGIN { printf "%.2f", bytes/1024/1024 }')
+          max_mb=$(awk -v bytes="$MAX_BINARY_SIZE_BYTES" 'BEGIN { printf "%.2f", bytes/1024/1024 }')
+
+          echo "Binary: $bin"
+          echo "Size: ${size_bytes} bytes (${size_mb} MB)"
+          echo "Max allowed: ${MAX_BINARY_SIZE_BYTES} bytes (${max_mb} MB)"
+
+          echo "### Binary Size (${GOOS}/${{ matrix.goarch }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Size: ${size_bytes} bytes (${size_mb} MB)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Max allowed: ${MAX_BINARY_SIZE_BYTES} bytes (${max_mb} MB)" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$size_bytes" -gt "$MAX_BINARY_SIZE_BYTES" ]; then
+            echo "Binary size budget exceeded for ${GOOS}/${{ matrix.goarch }}."
+            exit 1
+          fi
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wbcli-linux-${{ matrix.goarch }}
+          path: dist/wbcli-linux-${{ matrix.goarch }}
+          if-no-files-found: error
