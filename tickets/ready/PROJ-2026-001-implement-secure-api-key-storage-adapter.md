@@ -114,6 +114,9 @@ Acceptance Criteria:
   - [ ] optional non-interactive input path exists (`--api-secret-stdin`) for automation.
   - [ ] plaintext `--api-secret` flag is not used.
   - [ ] plaintext secret flags are prohibited for all auth commands (including legacy command paths).
+  - [ ] prompt mode is used only when input is interactive (TTY); non-interactive mode must fail with a clear hint to use `--api-secret-stdin`.
+  - [ ] `--api-secret-stdin` reads secret only from stdin, does not echo it, and fails with clear error on empty input.
+  - [ ] prompt mode and stdin mode are mutually exclusive and produce clear validation errors if misused.
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
   - [ ] empty API key/secret fails with clear error.
@@ -145,6 +148,10 @@ Acceptance Criteria:
   - [ ] no secret material is written to repo-tracked files or plain profile config.
   - [ ] profile config stores metadata only (profile name, timestamps, backend marker).
 - [ ] Unit tests and command tests include success and negative paths for each command part.
+- [ ] Documentation requirements for implementation:
+  - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
+  - [ ] README must include examples for local interactive use (prompt) and automation/CI use (`--api-secret-stdin`).
+  - [ ] README must explicitly warn not to pass secrets via command arguments.
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing key, empty secret, keychain unavailable, permission denied.
@@ -174,6 +181,7 @@ Rollout Plan:
 8. Implement `auth logout` delete path and idempotency behavior with tests.
 9. Implement `auth current` metadata read path with safe output tests.
 10. Add command-level docs/help text updates for secure usage.
+10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
 11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
 12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
 13. Run full verification including `auth test` and capture final evidence.
@@ -183,6 +191,7 @@ Verification Evidence (Required In Review):
 - `go build .`
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
+- README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - platform evidence:
   - macOS pass evidence is required
   - Linux pass evidence is required
