@@ -112,8 +112,8 @@ Rules:
 
 - commits must be very small and truly atomic (one clear intent per commit)
 - split large tasks aggressively: for example, `auth set/list/remove/test` should be split not only by command but also by command parts (flags/input, validation, storage adapter wiring, tests, docs)
-- before starting work, run `git pull --rebase origin main`
-- after local commit and before push, run `git pull --rebase origin main`
+- before work, run `git pull --rebase origin main`
+- after work and before push, run `git pull --rebase origin main`
 - if pull introduces conflicts, resolve them locally, re-run required checks, then push
 - push only when local `main` is up to date with `origin/main`
 - always push immediately after each commit (do not batch local commits)
