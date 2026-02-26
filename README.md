@@ -43,7 +43,13 @@ This repository currently defines the project plan and operating docs for:
 ## Build
 
 ```bash
-go build -o bin/wbcli ./cmd/wbcli
+go build -o bin/wbcli .
+```
+
+## Install
+
+```bash
+go install github.com/ChewX3D/wbcli@latest
 ```
 
 ## Run
