@@ -1,11 +1,15 @@
 package main
 
 import (
-	"os"
+	_ "embed"
 
-	"github.com/ChewX3D/wbcli/internal/cli"
+	"github.com/ChewX3D/wbcli/cmd"
 )
 
+//go:embed config.yaml
+var buildConfig []byte
+
 func main() {
-	os.Exit(cli.Run(os.Args[1:], os.Stdout, os.Stderr))
+	cmd.SetBuildConfig(buildConfig)
+	cmd.Execute()
 }
