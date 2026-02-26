@@ -215,6 +215,12 @@ Authoritative resources (required reading for contributors):
 - Robert C. Martin, Clean Architecture and dependency rule context:
   - https://blog.cleancoder.com/uncle-bob/2011/11/22/Clean-Architecture.html
 
+Reference implementation hint (optional, for practical patterns):
+
+- some CLI structuring and hexagonal layering approaches can be taken from:
+  - https://github.com/yaroslav-koval/hange
+- use it for architecture/CLI ideas only; keep wbcli domain boundaries and requirements as the source of truth
+
 Concept model:
 
 - center (inside): business core
