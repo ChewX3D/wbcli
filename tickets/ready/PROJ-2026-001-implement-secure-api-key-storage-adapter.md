@@ -14,10 +14,10 @@ Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
 
 Outcome:
-`whitbit keys` commands manage credentials via OS secret storage with profile isolation and safe error handling, aligned with encryption and access hardening tickets.
+`wbcli keys` commands manage credentials via OS secret storage with profile isolation and safe error handling, aligned with encryption and access hardening tickets.
 
 Acceptance Criteria:
-- [ ] `whitbit keys set/list/remove/test` commands are implemented.
+- [ ] `wbcli keys set/list/remove/test` commands are implemented.
 - [ ] API key/secret are written to secure storage, never persisted in repo-tracked files.
 - [ ] Storage backend preference is enforced (`os-keychain` first, fallback backend from PROJ-2026-014 only when needed).
 - [ ] Command input supports non-echo secret entry to avoid shell history leakage.

@@ -96,12 +96,11 @@ A ticket is `Done` only if:
 
 ## Branching And Commit Conventions
 
-Branch naming:
+Team model:
 
-- `feature/<ticket-id>-<slug>`
-- `fix/<ticket-id>-<slug>`
-- `chore/<ticket-id>-<slug>`
-- `hotfix/<ticket-id>-<slug>`
+- team size: 2 developers
+- trunk-based development: both developers commit directly to `main`
+- keep commits small and focused to reduce merge friction
 
 Commit format:
 
@@ -112,11 +111,14 @@ Commit format:
 Rules:
 
 - prefer small atomic commits
-- no direct commits to protected main branch
+- before starting work, run `git pull --rebase origin main`
+- after local commit and before push, run `git pull --rebase origin main`
+- if pull introduces conflicts, resolve them locally, re-run required checks, then push
+- push only when local `main` is up to date with `origin/main`
 
-## PR Checklist And Review Standards
+## Change Checklist And Review Standards
 
-PR must include:
+For trunk-based direct commits to `main`, each change set (commit or small commit series) must include:
 
 - linked ticket
 - what changed and why
@@ -134,9 +136,9 @@ Reviewer checks:
 
 Merge policy:
 
-- at least 1 reviewer approval
-- all required CI checks green
-- unresolved comments prohibited
+- prefer 1 peer review before push when practical; if not practical, request review immediately after push
+- all required CI checks must pass on `main`
+- if CI fails after push, prioritize immediate fix or revert
 
 ## Testing Expectations By Change Type
 
@@ -149,13 +151,13 @@ Merge policy:
 
 ## Documentation Update Policy
 
-When behavior changes, update in same PR:
+When behavior changes, update docs in the same change set:
 
 - user-facing usage docs
 - architecture/design notes when boundaries change
 - runbook/ops docs when operational steps change
 
-If no doc impact, PR must explicitly state: `Docs impact: none`.
+If no doc impact, change notes must explicitly state: `Docs impact: none`.
 
 ## Release Cadence And Changelog
 
@@ -358,7 +360,7 @@ Action Items:
 
 1. Create ticket board columns: `Backlog`, `Ready`, `In Progress`, `Review`, `Blocked`, `Done`, `Archived`.
 2. Add ticket/PR/postmortem templates from this file to your platform.
-3. Define branch protection: PR required, CI required, no direct main pushes.
+3. Define branch protection for trunk mode: direct pushes to `main` allowed for the 2-developer team, CI required on `main`.
 4. Enable CI checks: lint, test, build, secret scan.
 5. Start triage: label current work with IDs, priorities, owners, due dates.
 6. Set WIP rule (`max 2`) and stale reminder automation.
@@ -370,7 +372,7 @@ Action Items:
   - prevention: enforce DoR before `In Progress`
 - Too many parallel tasks, little completion:
   - prevention: strict WIP limit and weekly aging review
-- PRs merge with hidden risk:
+- Changes land with hidden risk:
   - prevention: mandatory risk section + rollback plan
 - Docs drift from behavior:
   - prevention: docs update required in DoD

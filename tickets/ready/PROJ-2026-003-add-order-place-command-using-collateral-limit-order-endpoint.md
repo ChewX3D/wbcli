@@ -14,7 +14,7 @@ Problem:
 MVP requires placing a single collateral limit order safely from CLI with validation and stable output.
 
 Outcome:
-`whitbit order place` submits one collateral limit order, validates inputs, and returns consistent table/json output.
+`wbcli order place` submits one collateral limit order, validates inputs, and returns consistent table/json output.
 
 Acceptance Criteria:
 - [ ] Command supports required fields (`market`, `side`, `amount`, `price`, `expiration`) and optional flags.

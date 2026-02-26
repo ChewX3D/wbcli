@@ -14,7 +14,7 @@ Problem:
 Users need laddered range plans, but generating orders manually is slow and error-prone.
 
 Outcome:
-`whitbit order range` can generate deterministic constant/arithmetic plans in local dry-run mode with exposure summary.
+`wbcli order range` can generate deterministic constant/arithmetic plans in local dry-run mode with exposure summary.
 
 Acceptance Criteria:
 - [ ] Range generation supports `start-price`, `end-price`, `step`, `amount-mode constant|arithmetic`.

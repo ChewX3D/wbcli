@@ -17,8 +17,8 @@ Outcome:
 CLI supports batch-safe cancellation and status reconciliation based on client-order-id prefixes and execution IDs.
 
 Acceptance Criteria:
-- [ ] `whitbit order cancel` supports cancel by explicit order id and by client-order-id prefix.
-- [ ] `whitbit order reconcile` retrieves status for planned/submitted orders and prints mismatch summary.
+- [ ] `wbcli order cancel` supports cancel by explicit order id and by client-order-id prefix.
+- [ ] `wbcli order reconcile` retrieves status for planned/submitted orders and prints mismatch summary.
 - [ ] Commands include `--dry-run` preview for cancellation targets.
 - [ ] Idempotent behavior is documented for already-canceled/already-filled orders.
 - [ ] Integration tests cover cancel success, partial cancel, and not-found paths.

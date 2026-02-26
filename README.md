@@ -1,4 +1,4 @@
-# whitbit_cli
+# wbcli
 
 Lightweight CLI project for placing WhiteBIT trading orders safely, with a design that can later be wrapped by a UI.
 
@@ -44,6 +44,6 @@ Keep core logic reusable:
 - `internal/app`: use-cases (`PlaceOrder`, `PlaceOrderRange`, `PreviewRange`)
 - `internal/adapters/whitebit`: signed HTTP client + endpoint mapping
 - `internal/adapters/secretstore`: keychain integration
-- `cmd/whitbit`: CLI surface only
+- `cmd/wbcli`: CLI surface only
 
 This split lets you add a UI later without duplicating order logic.

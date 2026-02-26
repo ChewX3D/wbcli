@@ -13,12 +13,12 @@ Provide a safe, scriptable CLI for WhiteBIT collateral trading with enough struc
 
 ## Command Model
 
-### `whitbit keys`
+### `wbcli keys`
 
-- `whitbit keys set --profile default --api-key <...> --api-secret <...>`
-- `whitbit keys list`
-- `whitbit keys remove --profile default`
-- `whitbit keys test --profile default`
+- `wbcli keys set --profile default --api-key <...> --api-secret <...>`
+- `wbcli keys list`
+- `wbcli keys remove --profile default`
+- `wbcli keys test --profile default`
 
 Implementation notes:
 
@@ -45,12 +45,12 @@ Implementation notes:
   - support local credential revoke/delete (`keys revoke` / `keys remove`)
   - prefer restricted exchange-side API key permissions and IP allowlist where supported
 
-### `whitbit order place`
+### `wbcli order place`
 
 Example:
 
 ```bash
-whitbit order place \
+wbcli order place \
   --profile default \
   --market BTC_PERP \
   --side buy \
@@ -67,12 +67,12 @@ Flow:
 3. submit order
 4. print normalized response and local audit record ID
 
-### `whitbit order range`
+### `wbcli order range`
 
 Example:
 
 ```bash
-whitbit order range \
+wbcli order range \
   --profile default \
   --market BTC_PERP \
   --side buy \

@@ -19,7 +19,7 @@ Each command execution records sanitized audit events and a retrievable local hi
 Acceptance Criteria:
 - [ ] Every live order command writes a structured audit record with `request_id`, profile, mode, and outcome.
 - [ ] Sensitive fields (API keys, signatures, secrets) are never persisted.
-- [ ] `whitbit history list` supports filtering by date/profile/mode.
+- [ ] `wbcli history list` supports filtering by date/profile/mode.
 - [ ] Retention setting exists for pruning old records.
 - [ ] Tests verify redaction and history query behavior.
 
