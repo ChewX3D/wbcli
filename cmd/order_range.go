@@ -57,7 +57,12 @@ func newOrderRangeCmd() *cobra.Command {
 	command.Flags().Float64Var(&options.StartPrice, "start-price", 0, "range start price")
 	command.Flags().Float64Var(&options.EndPrice, "end-price", 0, "range end price")
 	command.Flags().Float64Var(&options.Step, "step", 0, "price step")
-	command.Flags().StringVar(&options.AmountMode, "amount-mode", "constant", "amount mode: constant|arithmetic|geometric|capped-geometric|fibonacci|custom-list")
+	command.Flags().StringVar(
+		&options.AmountMode,
+		"amount-mode",
+		"constant",
+		"Amount sizing strategy per generated order (i is zero-based): constant=base-amount; arithmetic=base-amount*(start-multiplier+i*step-multiplier); geometric=base-amount*ratio^i; capped-geometric=min(base-amount*ratio^i, base-amount*max-multiplier); fibonacci=base-amount*fib(i+1); custom-list=explicit multipliers list.",
+	)
 	command.Flags().Float64Var(&options.BaseAmount, "base-amount", 0, "base amount per order")
 	command.Flags().Float64Var(&options.StartMultiplier, "start-multiplier", 1, "arithmetic start multiplier")
 	command.Flags().Float64Var(&options.StepMultiplier, "step-multiplier", 1, "arithmetic step multiplier")
