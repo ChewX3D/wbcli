@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newKeysListCmd() *cobra.Command {
+func newAuthListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List configured credential profiles",

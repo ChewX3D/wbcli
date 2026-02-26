@@ -2,14 +2,14 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-func newKeysRemoveCmd() *cobra.Command {
+func newAuthTestCmd() *cobra.Command {
 	options := &authProfileOptions{}
 
 	command := &cobra.Command{
-		Use:   "remove",
-		Short: "Remove credentials for a profile",
+		Use:   "test",
+		Short: "Validate credentials for a profile",
 		RunE: func(command *cobra.Command, args []string) error {
-			return writeNotImplemented(command, "remove", options.Profile)
+			return writeNotImplemented(command, "test", options.Profile)
 		},
 	}
 

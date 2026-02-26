@@ -17,10 +17,10 @@ func newAuthCmd() *cobra.Command {
 		},
 	}
 
-	authCmd.AddCommand(newKeysSetCmd())
-	authCmd.AddCommand(newKeysListCmd())
-	authCmd.AddCommand(newKeysRemoveCmd())
-	authCmd.AddCommand(newKeysTestCmd())
+	authCmd.AddCommand(newAuthSetCmd())
+	authCmd.AddCommand(newAuthListCmd())
+	authCmd.AddCommand(newAuthRemoveCmd())
+	authCmd.AddCommand(newAuthTestCmd())
 
 	return authCmd
 }

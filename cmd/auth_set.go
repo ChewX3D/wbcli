@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type keysSetOptions struct {
+type authSetOptions struct {
 	authProfileOptions
 	APIKey    string
 	APISecret string
 }
 
-func newKeysSetCmd() *cobra.Command {
-	options := &keysSetOptions{}
+func newAuthSetCmd() *cobra.Command {
+	options := &authSetOptions{}
 
 	command := &cobra.Command{
 		Use:   "set",
