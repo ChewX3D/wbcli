@@ -155,7 +155,9 @@ Acceptance Criteria:
   - [ ] failures and debug output preserve diagnostic value without leaking sensitive material.
 - [ ] Persistence boundaries:
   - [ ] no secret material is written to repo-tracked files or plain profile config.
-  - [ ] profile config stores metadata only (profile name, timestamps, backend marker).
+  - [ ] profile config stores metadata only (profile name, timestamps, backend marker, active profile).
+  - [ ] on macOS/Linux, config path is `~/.wbcli/config.yaml`.
+  - [ ] config file at `~/.wbcli/config.yaml` is created/updated with owner-only permissions (`0600`).
 - [ ] Unit tests and command tests include success and negative paths for each command part.
 - [ ] Documentation requirements for implementation:
   - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
@@ -168,6 +170,9 @@ Test Matrix:
 - [ ] fail-closed storage behavior:
   - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
   - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
+- [ ] config boundary behavior:
+  - [ ] verify `~/.wbcli/config.yaml` contains metadata only and no secret values.
+  - [ ] verify `~/.wbcli/config.yaml` permissions are `0600` on macOS/Linux.
 - [ ] platform compatibility:
   - [ ] run `auth login/use/profiles list/logout/current` verification on macOS.
   - [ ] run `auth login/use/profiles list/logout/current` verification on Linux.
@@ -191,6 +196,7 @@ Rollout Plan:
 2. Implement `os-keychain` adapter with deterministic error mapping.
 2.1. Add fail-closed guardrails to prohibit implicit fallback when keychain is unavailable.
 3. Wire profile metadata integration from PROJ-2026-006.
+3.1. Enforce metadata config path (`~/.wbcli/config.yaml`) and owner-only file mode (`0600`) on macOS/Linux.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 6. Implement `auth profiles list` metadata-only read path with redaction tests.
@@ -210,6 +216,8 @@ Verification Evidence (Required In Review):
 - `go build .`
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
+- explicit proof that `~/.wbcli/config.yaml` contains metadata only and no secrets
+- explicit proof that `~/.wbcli/config.yaml` uses `0600` permissions on macOS/Linux
 - explicit proof that keychain-unavailable path fails closed with no implicit fallback write
 - explicit proof that redaction contract is enforced in normal and verbose modes
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
@@ -235,3 +243,4 @@ Status Notes:
 - 2026-02-26: Added explicit redaction security point (shared helper, verbose-safe behavior, and leak-prevention evidence).
 - 2026-02-26: Added requirement to include practical usage examples directly in Cobra command help (`Example` field).
 - 2026-02-26: Added explicit-profile rule (no implicit default profile; user must set profile explicitly).
+- 2026-02-26: Added security boundary for metadata config path `~/.wbcli/config.yaml` with required `0600` permissions and no secret persistence.
