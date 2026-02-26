@@ -27,6 +27,7 @@ Command Model Examples (Approved):
 - `wbcli auth login --profile <profile>`
 - `wbcli auth logout --profile <profile>`
 - `wbcli auth current`
+- legacy `wbcli auth set` must be removed (no compatibility shim required for this project)
 
 Auth Login Architecture (Hexagonal, Mandatory):
 - Inbound adapter (`cmd/auth_login.go`):
@@ -119,6 +120,7 @@ Acceptance Criteria:
   - [ ] prompt mode is used only when input is interactive (TTY); non-interactive mode must fail with a clear hint to use `--api-secret-stdin`.
   - [ ] `--api-secret-stdin` reads secret only from stdin, does not echo it, and fails with clear error on empty input.
   - [ ] prompt mode and stdin mode are mutually exclusive and produce clear validation errors if misused.
+  - [ ] legacy `auth set` command is removed from CLI command tree and help output.
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
   - [ ] profile format is validated in `auth login` using charset `[a-zA-Z0-9._-]` and length `1..64`.
@@ -189,6 +191,9 @@ Acceptance Criteria:
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
+- [ ] command migration behavior:
+  - [ ] `wbcli auth set ...` is unavailable after migration and returns unknown-command error.
+  - [ ] `wbcli auth login ...` and `wbcli auth use ...` are available and shown in help output.
 - [ ] overwrite control behavior:
   - [ ] new profile create path succeeds without overwrite confirmation.
   - [ ] existing profile update without confirmation/`--force` is rejected.
@@ -232,6 +237,7 @@ Rollout Plan:
 3. Wire profile metadata integration from PROJ-2026-006.
 3.1. Enforce metadata config path (`~/.wbcli/config.yaml`) and owner-only file mode (`0600`) on macOS/Linux.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
+4.1. Remove legacy `auth set` command wiring and ensure `auth login` + `auth use` are the active entrypoints.
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
 5.2. Add credential overwrite guardrails (interactive confirm and non-interactive `--force` behavior) with leak-safe output handling.
@@ -295,6 +301,7 @@ Status Notes:
 - 2026-02-26: Added cross-platform security verification requirement (macOS/Linux) and mandated alignment with existing CI test/build workflows.
 - 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
 - 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
+- 2026-02-26: Confirmed migration strategy for this project: remove legacy `auth set` and use `auth login` + `auth use` only.
 
 Final Note (Mandatory):
 - add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.
