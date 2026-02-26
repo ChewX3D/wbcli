@@ -14,15 +14,15 @@ Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
 
 Outcome:
-`wbcli auth login/use/profiles list/logout/current/test` work end-to-end with profile isolation and secure-by-default behavior on `os-keychain`, with no secret leakage in files, logs, or command output.
+`wbcli auth login/use/list/logout/current/test` work end-to-end with profile isolation and secure-by-default behavior on `os-keychain`, with no secret leakage in files, logs, or command output.
 
 Scope:
-- implement `auth login/use/profiles list/logout/current/test` against `os-keychain` backend
+- implement `auth login/use/list/logout/current/test` against `os-keychain` backend
 - store only non-secret profile metadata in local config
 - enforce safe input and redaction rules in command handlers and tests
 
 Command Model Examples (Approved):
-- `wbcli auth profiles list`
+- `wbcli auth list`
 - `wbcli auth use <profile>`
 - `wbcli auth login --profile <profile>`
 - `wbcli auth logout --profile <profile>`
@@ -146,14 +146,14 @@ Acceptance Criteria:
   - [ ] must work on macOS.
   - [ ] must work on Linux.
   - [ ] Windows support is optional for this ticket (best-effort only).
-  - [ ] security verification must run on both macOS and Linux for auth commands (`login/use/profiles list/logout/current`; `test` when implemented).
+  - [ ] security verification must run on both macOS and Linux for auth commands (`login/use/list/logout/current`; `test` when implemented).
   - [ ] platform checks must include keychain unavailable/permission-denied scenarios per OS.
   - [ ] platform checks must include redaction and config-boundary assertions per OS.
 - [ ] `auth use` behavior:
   - [ ] selects active profile from existing profile set.
   - [ ] fails clearly if profile is missing or has no stored credentials.
   - [ ] updates only non-secret active-profile metadata in config.
-- [ ] `auth profiles list` behavior:
+- [ ] `auth list` behavior:
   - [ ] lists configured profiles and non-secret metadata only.
   - [ ] never prints API secret, payload, signature, or full API key.
 - [ ] `auth logout` behavior:
@@ -187,7 +187,7 @@ Acceptance Criteria:
   - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
   - [ ] README must include examples for local interactive use (prompt) and automation/CI use (`--api-secret-stdin`).
   - [ ] README must explicitly warn not to pass secrets via command arguments.
-  - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/profiles list/logout/current/test`.
+  - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/list/logout/current/test`.
   - [ ] README must include operational key-hygiene guidance:
     - [ ] one API key per profile/environment.
     - [ ] least-privilege key scopes for WhiteBIT permissions.
@@ -220,14 +220,14 @@ Test Matrix:
   - [ ] verify `~/.wbcli/config.yaml` contains metadata only and no secret values.
   - [ ] verify `~/.wbcli/config.yaml` permissions are `0600` on macOS/Linux.
 - [ ] platform compatibility:
-  - [ ] run `auth login/use/profiles list/logout/current` verification on macOS.
-  - [ ] run `auth login/use/profiles list/logout/current` verification on Linux.
+  - [ ] run `auth login/use/list/logout/current` verification on macOS.
+  - [ ] run `auth login/use/list/logout/current` verification on Linux.
   - [ ] Windows verification is optional and recorded only if performed.
   - [ ] include keychain unavailable and permission-denied cases for both macOS and Linux.
   - [ ] include redaction no-leak assertions on both macOS and Linux.
   - [ ] include `~/.wbcli/config.yaml` metadata-only and `0600` assertions on both macOS and Linux.
 - [ ] `auth use`: existing profile selection, missing profile failure, active-profile metadata update.
-- [ ] `auth profiles list`: returns metadata-only rows, redaction assertions, empty state.
+- [ ] `auth list`: returns metadata-only rows, redaction assertions, empty state.
 - [ ] `auth logout`: existing profile removal, missing profile idempotency, permission denied.
 - [ ] `auth current`: correct active profile output, empty state behavior, redaction assertions.
 - [ ] `auth test`: valid credentials, auth failure, network timeout, backend unavailable, redaction in error output.
@@ -255,7 +255,7 @@ Rollout Plan:
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
 5.2. Add credential overwrite guardrails (interactive confirm and non-interactive `--force` behavior) with leak-safe output handling.
-6. Implement `auth profiles list` metadata-only read path with redaction tests.
+6. Implement `auth list` metadata-only read path with redaction tests.
 7. Implement `auth use` active-profile selection path with metadata-only update tests.
 8. Implement `auth logout` delete path and idempotency behavior with tests.
 9. Implement `auth current` metadata read path with safe output tests.
@@ -264,7 +264,7 @@ Rollout Plan:
 10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
 10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
 10.3. Add operational key-hygiene section to README and concise security-hygiene notes in Cobra auth help text.
-11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
+11. Run verification for `login/use/list/logout/current` and capture evidence.
 11.1. Align auth security verification with existing CI test/build pipelines and extend CI where needed (do not create a separate disconnected verification flow).
 11.2. Ensure CI artifacts/summaries capture platform-specific security evidence for macOS and Linux.
 12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
@@ -274,7 +274,7 @@ Rollout Plan:
 Verification Evidence (Required In Review):
 - `go test ./...`
 - `go build .`
-- command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
+- command-level tests for `auth login/use/list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
 - explicit proof that `~/.wbcli/config.yaml` contains metadata only and no secrets
 - explicit proof that `~/.wbcli/config.yaml` uses `0600` permissions on macOS/Linux
@@ -303,7 +303,7 @@ Status Notes:
 - 2026-02-26: Refined with explicit secure I/O and testability criteria.
 - 2026-02-26: Linked to encryption/access hardening tickets.
 - 2026-02-26: Expanded into atomic command-part acceptance criteria, explicit scope boundaries, dependency mapping, and detailed rollout/test matrix.
-- 2026-02-26: Updated command model examples (`auth login/use/profiles list/logout/current`) and reordered rollout to start from `auth login`.
+- 2026-02-26: Updated command model examples (`auth login/use/list/logout/current`) and reordered rollout to start from `auth login`.
 - 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
 - 2026-02-26: Clarified `auth login` as independent app service and moved `auth test` to final gated phase after WhiteBIT client readiness.
 - 2026-02-26: Set platform acceptance rule: macOS and Linux required, Windows optional.
