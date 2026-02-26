@@ -134,6 +134,9 @@ Acceptance Criteria:
   - [ ] must work on macOS.
   - [ ] must work on Linux.
   - [ ] Windows support is optional for this ticket (best-effort only).
+  - [ ] security verification must run on both macOS and Linux for auth commands (`login/use/profiles list/logout/current`; `test` when implemented).
+  - [ ] platform checks must include keychain unavailable/permission-denied scenarios per OS.
+  - [ ] platform checks must include redaction and config-boundary assertions per OS.
 - [ ] `auth use` behavior:
   - [ ] selects active profile from existing profile set.
   - [ ] fails clearly if profile is missing or has no stored credentials.
@@ -186,6 +189,9 @@ Test Matrix:
   - [ ] run `auth login/use/profiles list/logout/current` verification on macOS.
   - [ ] run `auth login/use/profiles list/logout/current` verification on Linux.
   - [ ] Windows verification is optional and recorded only if performed.
+  - [ ] include keychain unavailable and permission-denied cases for both macOS and Linux.
+  - [ ] include redaction no-leak assertions on both macOS and Linux.
+  - [ ] include `~/.wbcli/config.yaml` metadata-only and `0600` assertions on both macOS and Linux.
 - [ ] `auth use`: existing profile selection, missing profile failure, active-profile metadata update.
 - [ ] `auth profiles list`: returns metadata-only rows, redaction assertions, empty state.
 - [ ] `auth logout`: existing profile removal, missing profile idempotency, permission denied.
@@ -221,6 +227,8 @@ Rollout Plan:
 10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
 10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
 11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
+11.1. Align auth security verification with existing CI test/build pipelines and extend CI where needed (do not create a separate disconnected verification flow).
+11.2. Ensure CI artifacts/summaries capture platform-specific security evidence for macOS and Linux.
 12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
 13. Run full verification including `auth test` and capture final evidence.
 
@@ -240,6 +248,9 @@ Verification Evidence (Required In Review):
   - macOS pass evidence is required
   - Linux pass evidence is required
   - Windows evidence is optional
+- CI alignment evidence:
+  - show how auth security checks integrate with existing CI test/build workflows
+  - include artifact/log links for macOS and Linux security verification results
 
 Rollback Plan:
 1. Disable write operations and keep read-only mode if backend instability appears.
@@ -260,3 +271,4 @@ Status Notes:
 - 2026-02-26: Added security boundary for metadata config path `~/.wbcli/config.yaml` with required `0600` permissions and no secret persistence.
 - 2026-02-26: Added strict profile validation rule for `auth login` only (no normalization; hard errors for invalid values).
 - 2026-02-26: Added secret memory-lifetime security point (minimal in-memory lifetime, best-effort buffer wipe, and no secret propagation in errors/logs).
+- 2026-02-26: Added cross-platform security verification requirement (macOS/Linux) and mandated alignment with existing CI test/build workflows.
