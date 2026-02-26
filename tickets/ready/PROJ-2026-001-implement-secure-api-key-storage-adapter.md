@@ -180,6 +180,12 @@ Acceptance Criteria:
   - [ ] README must include examples for local interactive use (prompt) and automation/CI use (`--api-secret-stdin`).
   - [ ] README must explicitly warn not to pass secrets via command arguments.
   - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/profiles list/logout/current/test`.
+  - [ ] README must include operational key-hygiene guidance:
+    - [ ] one API key per profile/environment.
+    - [ ] least-privilege key scopes for WhiteBIT permissions.
+    - [ ] exchange-side IP allowlist recommendation where available.
+    - [ ] rotation cadence and emergency revoke flow (`auth logout` + exchange-side revoke checklist).
+  - [ ] Cobra auth command help must include concise security-hygiene notes for safe operations.
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
@@ -237,6 +243,7 @@ Rollout Plan:
 10. Add command-level docs/help text updates for secure usage.
 10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
 10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
+10.3. Add operational key-hygiene section to README and concise security-hygiene notes in Cobra auth help text.
 11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
 11.1. Align auth security verification with existing CI test/build pipelines and extend CI where needed (do not create a separate disconnected verification flow).
 11.2. Ensure CI artifacts/summaries capture platform-specific security evidence for macOS and Linux.
@@ -255,6 +262,8 @@ Verification Evidence (Required In Review):
 - explicit proof that secret memory-lifetime controls are implemented (minimal lifetime, cleared buffers, no secret in errors/logs)
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
+- README excerpt/evidence showing operational key-hygiene guidance (per-profile keys, least privilege, allowlist, rotation/revoke)
+- CLI help evidence showing concise auth security-hygiene notes
 - platform evidence:
   - macOS pass evidence is required
   - Linux pass evidence is required
@@ -284,3 +293,4 @@ Status Notes:
 - 2026-02-26: Added secret memory-lifetime security point (minimal in-memory lifetime, best-effort buffer wipe, and no secret propagation in errors/logs).
 - 2026-02-26: Added cross-platform security verification requirement (macOS/Linux) and mandated alignment with existing CI test/build workflows.
 - 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
+- 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
