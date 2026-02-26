@@ -28,6 +28,73 @@ Command Model Examples (Approved):
 - `wbcli auth logout --profile <profile>`
 - `wbcli auth current`
 
+Auth Login Architecture (Hexagonal, Mandatory):
+- Inbound adapter (`cmd/auth_login.go`):
+  - parses flags and input mode (`--api-key`, `--profile`, `--api-secret-stdin`)
+  - reads secret from hidden prompt or stdin (never from plaintext flag)
+  - performs syntax-level validation only (required flags, non-empty values)
+  - calls app use-case port and renders safe output
+- Application use-case (`internal/app/auth/login.go`):
+  - defines `AuthLoginUseCase` with `Execute(ctx, req)` boundary
+  - orchestrates domain validation + outbound ports
+  - maps lower-level adapter errors into stable app errors
+  - returns transport-agnostic result DTO
+- Domain (`internal/domain/auth`):
+  - credential value object and invariants (non-empty profile/key/secret)
+  - profile naming policy and normalization rules
+  - no CLI, keychain, filesystem, or network dependencies
+- Outbound ports (`internal/app/auth/ports.go`):
+  - `CredentialStore` port: `Save(ctx, profile, credential)`
+  - `ProfileStore` port: `UpsertProfile(ctx, meta)` + `SetActiveProfile(ctx, profile)` (if login updates active profile)
+  - `Clock` port for deterministic timestamps in metadata
+- Outbound adapters:
+  - `internal/adapters/secretstore`: os-keychain implementation of `CredentialStore`
+  - profile metadata adapter from PROJ-2026-006 implementing `ProfileStore`
+- Composition root (`main.go` + `cmd`):
+  - instantiate adapters, wire use-case, inject into `auth login` command
+  - no business logic in wiring layer
+
+Auth Login Request/Response Contract:
+- Request:
+  - `profile` (default `default`)
+  - `api_key` (required)
+  - `api_secret` (required, ephemeral in memory)
+  - `input_mode` (`prompt` | `stdin`) for auditing/tests
+- Response (safe):
+  - `profile`
+  - `backend` (for example `os-keychain`)
+  - `saved_at`
+  - optional `warnings[]`
+- Never include secret, payload, signature, or full API key in response.
+
+Auth Login Error Contract:
+- `ERR_PROFILE_INVALID`
+- `ERR_API_KEY_REQUIRED`
+- `ERR_API_SECRET_REQUIRED`
+- `ERR_SECRETSTORE_UNAVAILABLE`
+- `ERR_SECRETSTORE_PERMISSION_DENIED`
+- `ERR_PROFILESTORE_WRITE_FAILED`
+- `ERR_INTERNAL`
+- CLI output must map these to actionable user messages while preserving redaction.
+
+Auth Login Security Contract:
+- secret input uses non-echo prompt by default
+- `--api-secret-stdin` is allowed for automation only
+- no plaintext `--api-secret` flag
+- secret is held only for request lifetime and cleared where practical after use
+- logs/output redact sensitive fields in normal and verbose modes
+- fail closed when `os-keychain` is unavailable for this ticket scope
+
+Atomic Commit Slices For `auth login` (Required):
+1. add command skeleton + flags (`login` only, no storage call)
+2. add secret input reader (prompt + stdin) + tests
+3. add request validation + domain value object tests
+4. add app use-case and port interfaces + unit tests with fakes
+5. add os-keychain adapter implementation + adapter tests
+6. wire command to use-case + safe success/error rendering tests
+7. metadata update integration (`ProfileStore`) + tests
+8. docs/help update for secure usage
+
 Out Of Scope:
 - encrypted-file fallback backend implementation (handled by PROJ-2026-014)
 - session unlock TTL, key rotation, and revoke workflows (handled by PROJ-2026-015)
@@ -114,3 +181,4 @@ Status Notes:
 - 2026-02-26: Linked to encryption/access hardening tickets.
 - 2026-02-26: Expanded into atomic command-part acceptance criteria, explicit scope boundaries, dependency mapping, and detailed rollout/test matrix.
 - 2026-02-26: Updated command model examples (`auth login/use/profiles list/logout/current`) and reordered rollout to start from `auth login`.
+- 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
