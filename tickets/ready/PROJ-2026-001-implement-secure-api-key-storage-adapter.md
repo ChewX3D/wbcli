@@ -4,7 +4,7 @@ ID: PROJ-2026-001
 Title: Implement secure API key storage adapter
 Priority: P1
 Status: Ready
-Owner: chewbaccalol
+Owner: nocle
 Due Date: 2026-03-02
 Created: 2026-02-26
 Updated: 2026-02-26
