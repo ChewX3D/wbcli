@@ -387,6 +387,77 @@ PR architecture checklist (mandatory):
 - can the use-case run with test doubles for infrastructure?
 - are adapters thin translators rather than decision engines?
 
+## Project Structure Contract (Mandatory)
+
+VERY IMPORTANT (MANDATORY):
+
+- folder responsibilities below are required for all new features and refactors
+- placing code in the wrong layer/folder is a blocking issue
+
+Recommended tree (source of truth for placement):
+
+```text
+cmd/
+internal/
+  domain/
+  app/
+    services/
+    ports/
+  adapters/
+  cli/
+docs/
+configs/
+tickets/
+scripts/
+```
+
+What goes where:
+
+- `cmd/`
+  - Cobra command definitions and flag parsing
+  - CLI input/output wiring only
+  - no business rules and no direct infrastructure calls
+- `internal/domain/`
+  - entities, value objects, invariants, and pure validation logic
+  - no imports from adapters/transport/framework packages
+- `internal/app/services/`
+  - application/use-case services (orchestration and policies)
+  - this is the correct location for feature services (for example auth login service)
+  - may depend on `internal/domain` and `internal/app/ports` only
+- `internal/app/ports/`
+  - boundary interfaces for side effects needed by services
+  - examples: `CredentialStore`, `ProfileStore`, `AuthProbe`, `Clock`
+  - keep interfaces small and behavior-focused
+- `internal/adapters/`
+  - concrete implementations of ports (exchange, secret store, persistence, etc.)
+  - translate external protocol/data into core models and back
+- `internal/cli/`
+  - reusable CLI utilities shared by commands (formatters, prompt helpers, redaction helpers)
+  - no domain or policy decisions
+- `docs/`
+  - product, architecture, and operational documentation
+- `configs/`
+  - static config artifacts (badges, templates, build/runtime config)
+- `tickets/`
+  - planning and execution tracking; each non-trivial feature must have a ticket
+- `scripts/`
+  - local automation used by development workflow
+
+Feature-oriented example for auth:
+
+```text
+cmd/auth_login.go
+internal/domain/auth/credential.go
+internal/app/services/auth/login.go
+internal/app/ports/auth.go
+internal/adapters/secretstore/keychain.go
+```
+
+Specific rule for current roadmap:
+
+- implement auth services (`login/use/profiles/logout/current`) independently from the WhiteBIT client adapter
+- keep `auth test` as the last auth command, implemented only after WhiteBIT client readiness
+
 ## Documentation Update Policy
 
 When behavior changes, update docs in the same change set:
