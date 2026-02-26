@@ -249,6 +249,7 @@ Rollout Plan:
 11.2. Ensure CI artifacts/summaries capture platform-specific security evidence for macOS and Linux.
 12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
 13. Run full verification including `auth test` and capture final evidence.
+14. Add integration tests for auth flows using mock secret-store/keychain adapters (do not use real OS keychain in tests/CI).
 
 Verification Evidence (Required In Review):
 - `go test ./...`
@@ -294,3 +295,6 @@ Status Notes:
 - 2026-02-26: Added cross-platform security verification requirement (macOS/Linux) and mandated alignment with existing CI test/build workflows.
 - 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
 - 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
+
+Final Note (Mandatory):
+- add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.
