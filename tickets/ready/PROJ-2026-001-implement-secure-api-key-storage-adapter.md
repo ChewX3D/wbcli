@@ -152,6 +152,7 @@ Acceptance Criteria:
   - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
   - [ ] README must include examples for local interactive use (prompt) and automation/CI use (`--api-secret-stdin`).
   - [ ] README must explicitly warn not to pass secrets via command arguments.
+  - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/profiles list/logout/current/test`.
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing key, empty secret, keychain unavailable, permission denied.
@@ -182,6 +183,7 @@ Rollout Plan:
 9. Implement `auth current` metadata read path with safe output tests.
 10. Add command-level docs/help text updates for secure usage.
 10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
+10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
 11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
 12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
 13. Run full verification including `auth test` and capture final evidence.
@@ -192,6 +194,7 @@ Verification Evidence (Required In Review):
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
+- CLI help evidence showing `Example` blocks for auth commands
 - platform evidence:
   - macOS pass evidence is required
   - Linux pass evidence is required
@@ -210,3 +213,4 @@ Status Notes:
 - 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
 - 2026-02-26: Clarified `auth login` as independent app service and moved `auth test` to final gated phase after WhiteBIT client readiness.
 - 2026-02-26: Set platform acceptance rule: macOS and Linux required, Windows optional.
+- 2026-02-26: Added requirement to include practical usage examples directly in Cobra command help (`Example` field).
