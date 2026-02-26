@@ -121,6 +121,10 @@ Acceptance Criteria:
   - [ ] prompt mode and stdin mode are mutually exclusive and produce clear validation errors if misused.
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
+  - [ ] profile format is validated in `auth login` using charset `[a-zA-Z0-9._-]` and length `1..64`.
+  - [ ] profile values with leading/trailing spaces are rejected.
+  - [ ] no profile normalization is allowed; invalid profile input fails hard with explicit error.
+  - [ ] profile format validation scope for this ticket is `auth login` only (profile creation path).
   - [ ] empty API key/secret fails with clear error.
   - [ ] credentials are written to `os-keychain` only.
   - [ ] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
@@ -166,7 +170,7 @@ Acceptance Criteria:
   - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/profiles list/logout/current/test`.
 
 Test Matrix:
-- [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, missing key, empty secret, keychain unavailable, permission denied.
+- [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
 - [ ] fail-closed storage behavior:
   - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
   - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
@@ -244,3 +248,4 @@ Status Notes:
 - 2026-02-26: Added requirement to include practical usage examples directly in Cobra command help (`Example` field).
 - 2026-02-26: Added explicit-profile rule (no implicit default profile; user must set profile explicitly).
 - 2026-02-26: Added security boundary for metadata config path `~/.wbcli/config.yaml` with required `0600` permissions and no secret persistence.
+- 2026-02-26: Added strict profile validation rule for `auth login` only (no normalization; hard errors for invalid values).
