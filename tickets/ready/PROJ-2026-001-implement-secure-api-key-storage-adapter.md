@@ -34,19 +34,21 @@ Auth Login Architecture (Hexagonal, Mandatory):
   - reads secret from hidden prompt or stdin (never from plaintext flag)
   - performs syntax-level validation only (required flags, non-empty values)
   - calls app use-case port and renders safe output
-- Application use-case (`internal/app/auth/login.go`):
-  - defines `AuthLoginUseCase` with `Execute(ctx, req)` boundary
+- Application auth service (`internal/app/services/auth/login.go`):
+  - defines `AuthLoginService` with `Execute(ctx, req)` boundary
   - orchestrates domain validation + outbound ports
   - maps lower-level adapter errors into stable app errors
   - returns transport-agnostic result DTO
+  - must be implementable without WhiteBIT client readiness
 - Domain (`internal/domain/auth`):
   - credential value object and invariants (non-empty profile/key/secret)
   - profile naming policy and normalization rules
   - no CLI, keychain, filesystem, or network dependencies
-- Outbound ports (`internal/app/auth/ports.go`):
+- Outbound ports (`internal/app/ports/auth.go`):
   - `CredentialStore` port: `Save(ctx, profile, credential)`
   - `ProfileStore` port: `UpsertProfile(ctx, meta)` + `SetActiveProfile(ctx, profile)` (if login updates active profile)
   - `Clock` port for deterministic timestamps in metadata
+  - `AuthProbe` port for `auth test` only (implemented later, after WhiteBIT client is ready)
 - Outbound adapters:
   - `internal/adapters/secretstore`: os-keychain implementation of `CredentialStore`
   - profile metadata adapter from PROJ-2026-006 implementing `ProfileStore`
@@ -102,7 +104,7 @@ Out Of Scope:
 
 Dependencies:
 - PROJ-2026-006 for profile metadata persistence model
-- PROJ-2026-002 for authenticated connectivity verification behavior in `auth test`
+- PROJ-2026-002 for `auth test` authenticated connectivity verification behavior (final phase only)
 - PROJ-2026-014 for explicit fallback backend policy (must not be silently auto-enabled here)
 
 Acceptance Criteria:
@@ -133,6 +135,7 @@ Acceptance Criteria:
   - [ ] reads credentials from secure store and performs authenticated connectivity check.
   - [ ] error mapping distinguishes auth, transport, and unknown failures.
   - [ ] output and logs never expose `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`, API secret, or full API key.
+  - [ ] implemented last, after PROJ-2026-002 is ready.
 - [ ] Persistence boundaries:
   - [ ] no secret material is written to repo-tracked files or plain profile config.
   - [ ] profile config stores metadata only (profile name, timestamps, backend marker).
@@ -152,18 +155,19 @@ Risks:
 - Improper logging can still leak headers or partial secrets.
 
 Rollout Plan:
-1. Define credential domain types and secret store interface (no command logic yet).
+1. Define credential domain types and auth service interfaces (`CredentialStore`, `ProfileStore`, `Clock`) with no WhiteBIT dependency.
 2. Implement `os-keychain` adapter with deterministic error mapping.
 3. Wire profile metadata integration from PROJ-2026-006.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
-5. Implement `auth login` validation + storage write path with tests.
+5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 6. Implement `auth profiles list` metadata-only read path with redaction tests.
 7. Implement `auth use` active-profile selection path with metadata-only update tests.
 8. Implement `auth logout` delete path and idempotency behavior with tests.
 9. Implement `auth current` metadata read path with safe output tests.
-10. Implement `auth test` minimal authenticated connectivity path with redaction and failure-classification tests.
-11. Add command-level docs/help text updates for secure usage.
-12. Run full verification and capture test evidence in ticket status note.
+10. Add command-level docs/help text updates for secure usage.
+11. Run verification for `login/use/profiles list/logout/current` and capture evidence.
+12. After PROJ-2026-002 is ready, implement `auth test` command using `AuthProbe` port, then add redaction/failure-classification tests as the final step.
+13. Run full verification including `auth test` and capture final evidence.
 
 Verification Evidence (Required In Review):
 - `go test ./...`
@@ -182,3 +186,4 @@ Status Notes:
 - 2026-02-26: Expanded into atomic command-part acceptance criteria, explicit scope boundaries, dependency mapping, and detailed rollout/test matrix.
 - 2026-02-26: Updated command model examples (`auth login/use/profiles list/logout/current`) and reordered rollout to start from `auth login`.
 - 2026-02-26: Added mandatory hexagonal architecture contract for `auth login` (layers, ports, DTOs, error codes, security contract, and atomic commit slices).
+- 2026-02-26: Clarified `auth login` as independent app service and moved `auth test` to final gated phase after WhiteBIT client readiness.
