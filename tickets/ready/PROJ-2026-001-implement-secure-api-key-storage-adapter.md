@@ -58,7 +58,7 @@ Auth Login Architecture (Hexagonal, Mandatory):
 
 Auth Login Request/Response Contract:
 - Request:
-  - `profile` (default `default`)
+  - `profile` (required, explicit; no implicit default profile)
   - `api_key` (required)
   - `api_secret` (required, ephemeral in memory)
   - `input_mode` (`prompt` | `stdin`) for auditing/tests
@@ -109,6 +109,8 @@ Dependencies:
 
 Acceptance Criteria:
 - [ ] `auth login` input mode is secure by default:
+  - [ ] `--profile` is required and must be provided explicitly.
+  - [ ] implicit default profile selection is prohibited.
   - [ ] `--api-key` is required.
   - [ ] API secret input is hidden prompt by default (non-echo).
   - [ ] optional non-interactive input path exists (`--api-secret-stdin`) for automation.
@@ -162,7 +164,7 @@ Acceptance Criteria:
   - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/profiles list/logout/current/test`.
 
 Test Matrix:
-- [ ] `auth login`: interactive secret input success, stdin secret input success, missing key, empty secret, keychain unavailable, permission denied.
+- [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, missing key, empty secret, keychain unavailable, permission denied.
 - [ ] fail-closed storage behavior:
   - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
   - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
@@ -232,3 +234,4 @@ Status Notes:
 - 2026-02-26: Set platform acceptance rule: macOS and Linux required, Windows optional.
 - 2026-02-26: Added explicit redaction security point (shared helper, verbose-safe behavior, and leak-prevention evidence).
 - 2026-02-26: Added requirement to include practical usage examples directly in Cobra command help (`Example` field).
+- 2026-02-26: Added explicit-profile rule (no implicit default profile; user must set profile explicitly).
