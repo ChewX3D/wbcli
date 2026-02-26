@@ -122,6 +122,8 @@ Acceptance Criteria:
   - [ ] empty API key/secret fails with clear error.
   - [ ] credentials are written to `os-keychain` only.
   - [ ] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
+  - [ ] fallback to insecure storage (plaintext file/env/arg) is strictly prohibited.
+  - [ ] any non-keychain fallback must be explicitly configured and is out of scope for this ticket.
 - [ ] Platform support requirements:
   - [ ] must work on macOS.
   - [ ] must work on Linux.
@@ -156,6 +158,9 @@ Acceptance Criteria:
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing key, empty secret, keychain unavailable, permission denied.
+- [ ] fail-closed storage behavior:
+  - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
+  - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
 - [ ] platform compatibility:
   - [ ] run `auth login/use/profiles list/logout/current` verification on macOS.
   - [ ] run `auth login/use/profiles list/logout/current` verification on Linux.
@@ -174,6 +179,7 @@ Risks:
 Rollout Plan:
 1. Define credential domain types and auth service interfaces (`CredentialStore`, `ProfileStore`, `Clock`) with no WhiteBIT dependency.
 2. Implement `os-keychain` adapter with deterministic error mapping.
+2.1. Add fail-closed guardrails to prohibit implicit fallback when keychain is unavailable.
 3. Wire profile metadata integration from PROJ-2026-006.
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
@@ -193,6 +199,7 @@ Verification Evidence (Required In Review):
 - `go build .`
 - command-level tests for `auth login/use/profiles list/logout/current/test` with redaction assertions
 - explicit proof that no secret values are persisted in config files
+- explicit proof that keychain-unavailable path fails closed with no implicit fallback write
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
 - platform evidence:
