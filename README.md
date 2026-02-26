@@ -58,6 +58,26 @@ go install github.com/ChewX3D/wbcli@latest
 go run . --help
 ```
 
+## Tests
+
+```bash
+go test ./...
+```
+
+### Mocks
+
+Mocks are generated with Mockery and stored in `mocks/`.
+
+```bash
+make gen-mocks
+```
+
+Testing rules:
+
+- regenerate mocks when interface signatures change
+- use generated mocks for external dependencies in tests
+- for auth integration-style tests, use mock secret-store/keychain adapters instead of real OS keychain access
+
 ## Suggested Build Direction
 
 Keep core logic reusable:

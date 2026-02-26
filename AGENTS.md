@@ -371,6 +371,15 @@ Testing strategy tied to architecture:
 - adapter tests: integration-focused contract tests against real protocol boundaries where feasible
 - end-to-end smoke tests: CLI path through composition root
 
+Mock generation and usage in tests (mandatory):
+
+- generated mocks are stored in `mocks/`
+- regenerate mocks with `make gen-mocks` (uses `configs/.mockery.yml`, requires `mockery` in PATH)
+- regenerate mocks whenever interface signatures change
+- prefer generated mocks for outbound dependencies in application/command tests
+- set explicit expectations for expected calls and non-calls to make behavior contracts visible
+- for integration-style auth tests, use mock secret-store/keychain adapters rather than real OS keychain access
+
 Anti-patterns (prohibited):
 
 - business rules inside CLI handlers or transport structs
@@ -405,6 +414,7 @@ internal/
     ports/
   adapters/
   cli/
+mocks/
 docs/
 configs/
 tickets/
@@ -434,6 +444,9 @@ What goes where:
 - `internal/cli/`
   - reusable CLI utilities shared by commands (formatters, prompt helpers, redaction helpers)
   - no domain or policy decisions
+- `mocks/`
+  - generated test doubles from interfaces (mockery/testify template)
+  - do not hand-edit generated files; regenerate with `make gen-mocks`
 - `docs/`
   - product, architecture, and operational documentation
 - `configs/`
