@@ -113,6 +113,7 @@ Acceptance Criteria:
   - [ ] API secret input is hidden prompt by default (non-echo).
   - [ ] optional non-interactive input path exists (`--api-secret-stdin`) for automation.
   - [ ] plaintext `--api-secret` flag is not used.
+  - [ ] plaintext secret flags are prohibited for all auth commands (including legacy command paths).
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
   - [ ] empty API key/secret fails with clear error.
