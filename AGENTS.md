@@ -110,7 +110,8 @@ Commit format:
 
 Rules:
 
-- prefer small atomic commits
+- commits must be very small and truly atomic (one clear intent per commit)
+- split large tasks aggressively: for example, `auth set/list/remove/test` should be split not only by command but also by command parts (flags/input, validation, storage adapter wiring, tests, docs)
 - before starting work, run `git pull --rebase origin main`
 - after local commit and before push, run `git pull --rebase origin main`
 - if pull introduces conflicts, resolve them locally, re-run required checks, then push
@@ -161,7 +162,8 @@ VERY IMPORTANT (MANDATORY):
 
 Required verification for CLI-impacting changes:
 
-- run `go build .`
+- run `mkdir -p /tmp/gobin`
+- run `go build -o /tmp/gobin .`
 - run `go test ./...`
 - run `go install github.com/ChewX3D/wbcli@latest` (or equivalent local validation in restricted environments)
 
@@ -251,6 +253,11 @@ Primary references:
   - https://go.dev/blog/context
   - https://go.dev/blog/context-and-structs
   - https://go.dev/blog/pipelines
+
+Official WhiteBIT reference (for signing/auth flow):
+
+- https://github.com/whitebit-exchange/api-quickstart/blob/master/src/go/auth.go
+  - can be used as an official WhiteBIT reference implementation
 
 Mandatory engineering rules derived from these docs:
 
