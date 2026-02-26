@@ -151,6 +151,11 @@ Merge policy:
 
 ## Go Code Style (Google)
 
+VERY IMPORTANT (MANDATORY):
+
+- all Go code must follow Google Go style guidance
+- style violations are blocking issues and must be fixed before merge
+
 For all Go code in this repository, follow the Google Go style guides in full:
 
 - Go Style Guide: https://google.github.io/styleguide/go/
@@ -193,6 +198,96 @@ Required implementation rules for day-to-day work:
   - add package comments for non-trivial packages
   - document exported behavior, invariants, side effects, and concurrency expectations
   - keep examples/docs synchronized with current CLI/API behavior
+
+## Architecture Standard (Hexagonal / Ports And Adapters)
+
+VERY IMPORTANT (MANDATORY):
+
+- all new features and refactors must follow hexagonal architecture (ports and adapters)
+- architecture violations are blocking issues and must be fixed before merge
+
+Authoritative resources (required reading for contributors):
+
+- Alistair Cockburn, original Hexagonal Architecture article:
+  - https://alistair.cockburn.us/hexagonal-architecture
+- AWS Prescriptive Guidance, Hexagonal architecture pattern:
+  - https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/hexagonal-architecture.html
+- Robert C. Martin, Clean Architecture and dependency rule context:
+  - https://blog.cleancoder.com/uncle-bob/2011/11/22/Clean-Architecture.html
+
+Concept model:
+
+- center (inside): business core
+  - domain model + business rules (`internal/domain`)
+  - application/use-case orchestration (`internal/app`)
+- boundary: ports
+  - inbound ports: use-case interfaces exposed by the core
+  - outbound ports: interfaces the core needs for side effects (exchange API, secret store, DB, clock, etc.)
+- edge (outside): adapters
+  - primary/inbound adapters drive use cases (CLI, HTTP handlers, jobs)
+  - secondary/outbound adapters implement outbound ports (WhiteBIT client, keychain, persistence, messaging)
+
+Dependency rule (non-negotiable):
+
+- dependencies point inward only
+- `internal/domain` must not import adapter/infrastructure packages
+- `internal/app` may depend on `domain` and port interfaces, never concrete infrastructure
+- adapters depend on core ports and translate external concerns to/from core models
+- `cmd/wbcli` is the composition root that wires concrete adapters into use cases
+
+Implementation contract by layer:
+
+- Domain (`internal/domain`)
+  - pure business logic, entities/value objects, invariants, validation rules
+  - no transport, IO, DB, CLI flag parsing, or framework code
+- Application (`internal/app`)
+  - use-cases, orchestration, transaction boundaries, policy sequencing
+  - depends on domain + abstract ports only
+  - defines request/response DTOs suitable for adapters
+- Ports
+  - declare explicit interfaces at the core boundary
+  - keep interfaces small and behavior-focused (avoid god interfaces)
+  - include context and error contracts where relevant
+- Adapters (`internal/adapters/*`)
+  - map external formats/protocols to core DTOs and back
+  - isolate exchange-specific/auth-specific/storage-specific details
+  - do not leak transport models into domain
+- Composition root (`cmd/wbcli`)
+  - instantiate adapters
+  - inject them into application services
+  - select runtime configuration/profile/environment
+
+Flow for a command/request:
+
+1. inbound adapter parses input and performs syntax-level validation
+2. adapter calls an application use-case through an inbound port
+3. use-case applies domain rules and invokes outbound ports
+4. outbound adapters execute side effects (API/storage/etc.)
+5. use-case returns stable result model
+6. inbound adapter renders output (`table`/`json`) without business logic leakage
+
+Testing strategy tied to architecture:
+
+- domain tests: pure unit tests, no mocks for infrastructure
+- application tests: use fakes/stubs for outbound ports, validate orchestration and error mapping
+- adapter tests: integration-focused contract tests against real protocol boundaries where feasible
+- end-to-end smoke tests: CLI path through composition root
+
+Anti-patterns (prohibited):
+
+- business rules inside CLI handlers or transport structs
+- domain package importing infrastructure libraries
+- direct SDK/DB calls from use-case layer without outbound port
+- shared mutable globals crossing layers
+- adapter-specific error/data types leaking into domain APIs
+
+PR architecture checklist (mandatory):
+
+- does this change keep dependencies pointing inward?
+- are side effects behind outbound ports?
+- is business logic placed in `domain`/`app` instead of adapters?
+- can the use-case run with test doubles for infrastructure?
+- are adapters thin translators rather than decision engines?
 
 ## Documentation Update Policy
 
