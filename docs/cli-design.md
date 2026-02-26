@@ -25,6 +25,26 @@ Implementation notes:
 - store secrets using platform secret storage (Keychain/libsecret/Credential Manager)
 - keep only non-sensitive metadata in local config (profile name, created_at, last_used_at)
 
+### Credential Encryption and Access Plan
+
+- backend order:
+  - `os-keychain` is default and required when available
+  - `encrypted-file` is allowed only as explicit fallback
+- encrypted-file fallback:
+  - encryption: `AES-256-GCM`
+  - key derivation: `Argon2id` with random per-record salt
+  - file permissions: owner-only (`0600`)
+  - authenticated metadata: profile name + schema version
+- runtime access policy:
+  - prompt for secrets using non-echo input
+  - do not log API keys, payload, signatures, or secrets
+  - support short session unlock TTL for repeated commands
+  - clear plaintext buffers after signing where practical
+- lifecycle policy:
+  - support key rotation workflow (`keys rotate`) with cutover validation
+  - support local credential revoke/delete (`keys revoke` / `keys remove`)
+  - prefer restricted exchange-side API key permissions and IP allowlist where supported
+
 ### `whitbit order place`
 
 Example:

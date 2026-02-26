@@ -55,6 +55,16 @@ Implementation rule:
 - sign encoded payload with HMAC-SHA512(secret)
 - send payload fields as JSON body and include headers above
 
+## Credential Handling Rules (CLI Side)
+
+Derived from WhiteBIT private auth requirements (`X-TXC-APIKEY`, `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`):
+
+- API secret is used only for request signing and must never be written to logs or command output.
+- API key should be treated as sensitive operational data and redacted in diagnostics.
+- Prepared payload and signature data should be kept in memory only for request lifetime.
+- Nonce state should be persisted without storing secret material next to nonce cache.
+- If secret backend is unavailable, fail closed by default unless encrypted fallback storage is explicitly configured.
+
 ## Nonce Strategy
 
 Recommended for CLI:
