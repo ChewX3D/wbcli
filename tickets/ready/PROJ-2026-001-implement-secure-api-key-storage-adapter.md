@@ -27,12 +27,13 @@ Command Model Examples (Approved):
 - `wbcli auth login --profile <profile>`
 - `wbcli auth logout --profile <profile>`
 - `wbcli auth current`
+- `printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile <profile>`
 - legacy `wbcli auth set` must be removed (no compatibility shim required for this project)
 
 Auth Login Architecture (Hexagonal, Mandatory):
 - Inbound adapter (`cmd/auth_login.go`):
-  - parses flags and input mode (`--api-key`, `--profile`, `--api-secret-stdin`)
-  - reads secret from hidden prompt or stdin (never from plaintext flag)
+  - parses flags and input contract (`--profile`, optional overwrite controls)
+  - reads credentials from stdin only (`api_key` first line, `api_secret` second line)
   - performs syntax-level validation only (required flags, non-empty values)
   - calls app use-case port and renders safe output
 - Application auth service (`internal/app/services/auth/login.go`):
@@ -60,9 +61,9 @@ Auth Login Architecture (Hexagonal, Mandatory):
 Auth Login Request/Response Contract:
 - Request:
   - `profile` (required, explicit; no implicit default profile)
-  - `api_key` (required)
-  - `api_secret` (required, ephemeral in memory)
-  - `input_mode` (`prompt` | `stdin`) for auditing/tests
+  - `api_key` (required, from stdin first line)
+  - `api_secret` (required, from stdin second line; ephemeral in memory)
+  - `input_mode` fixed to `stdin` for auditing/tests
 - Response (safe):
   - `profile`
   - `backend` (for example `os-keychain`)
@@ -81,16 +82,17 @@ Auth Login Error Contract:
 - CLI output must map these to actionable user messages while preserving redaction.
 
 Auth Login Security Contract:
-- secret input uses non-echo prompt by default
-- `--api-secret-stdin` is allowed for automation only
+- credential input for `auth login` is stdin-only (local and CI)
+- no `--api-key` flag
 - no plaintext `--api-secret` flag
+- prompt-based secret input is not supported
 - secret is held only for request lifetime and cleared where practical after use
 - logs/output redact sensitive fields in normal and verbose modes
 - fail closed when `os-keychain` is unavailable for this ticket scope
 
 Atomic Commit Slices For `auth login` (Required):
 1. add command skeleton + flags (`login` only, no storage call)
-2. add secret input reader (prompt + stdin) + tests
+2. add stdin credential reader (`api_key` + `api_secret`) + tests
 3. add request validation + domain value object tests
 4. add app use-case and port interfaces + unit tests with fakes
 5. add os-keychain adapter implementation + adapter tests
@@ -112,20 +114,19 @@ Acceptance Criteria:
 - [ ] `auth login` input mode is secure by default:
   - [ ] `--profile` is required and must be provided explicitly.
   - [ ] implicit default profile selection is prohibited.
-  - [ ] `--api-key` is required.
-  - [ ] API secret input is hidden prompt by default (non-echo).
-  - [ ] optional non-interactive input path exists (`--api-secret-stdin`) for automation.
+  - [ ] API key and API secret are accepted only through stdin payload.
+  - [ ] no `--api-key` flag is supported.
   - [ ] plaintext `--api-secret` flag is not used.
+  - [ ] prompt-based secret input is not supported.
   - [ ] plaintext secret flags are prohibited for all auth commands (including legacy command paths).
-  - [ ] prompt mode is used only when input is interactive (TTY); non-interactive mode must fail with a clear hint to use `--api-secret-stdin`.
-  - [ ] `--api-secret-stdin` reads secret only from stdin, does not echo it, and fails with clear error on empty input.
-  - [ ] prompt mode and stdin mode are mutually exclusive and produce clear validation errors if misused.
+  - [ ] `auth login` fails with clear error when stdin payload is missing or empty.
   - [ ] legacy `auth set` command is removed from CLI command tree and help output.
-  - [ ] `--api-secret-stdin` parsing contract is explicit and deterministic:
+  - [ ] stdin credential parsing contract is explicit and deterministic:
     - [ ] read stdin input once with bounded maximum size.
+    - [ ] accept exactly two non-empty logical lines: first `api_key`, second `api_secret`.
     - [ ] trim exactly one trailing line ending (`\\n` or `\\r\\n`) for common shell piping compatibility.
-    - [ ] reject empty effective value after trimming.
-    - [ ] reject multi-line input payloads.
+    - [ ] reject empty effective key or secret value after parsing.
+    - [ ] reject missing second line and reject extra lines.
     - [ ] parsing failures must not echo or log raw stdin content.
 - [ ] `auth login` validation and storage behavior:
   - [ ] invalid/empty profile fails with clear error.
@@ -185,8 +186,8 @@ Acceptance Criteria:
 - [ ] Unit tests and command tests include success and negative paths for each command part.
 - [ ] Documentation requirements for implementation:
   - [ ] README must explain auth secret input modes in simple, easy-to-understand language.
-  - [ ] README must include examples for local interactive use (prompt) and automation/CI use (`--api-secret-stdin`).
-  - [ ] README must explicitly warn not to pass secrets via command arguments.
+  - [ ] README must include stdin-only login examples for local shell usage and automation/CI usage.
+  - [ ] README must explicitly warn not to pass credentials via command arguments.
   - [ ] Cobra command help must include practical `Example` blocks for `auth login/use/list/logout/current/test`.
   - [ ] README must include operational key-hygiene guidance:
     - [ ] one API key per profile/environment.
@@ -196,12 +197,13 @@ Acceptance Criteria:
   - [ ] Cobra auth command help must include concise security-hygiene notes for safe operations.
 
 Test Matrix:
-- [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
+- [ ] `auth login`: stdin credential payload success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
 - [ ] stdin parsing behavior:
-  - [ ] single-line stdin value succeeds.
+  - [ ] valid two-line stdin payload (`api_key` + `api_secret`) succeeds.
   - [ ] single trailing newline is handled per contract.
   - [ ] empty stdin fails with clear error.
-  - [ ] multi-line stdin input fails with clear error.
+  - [ ] missing second line fails with clear error.
+  - [ ] extra lines after second credential line fail with clear error.
   - [ ] oversized stdin input fails with clear error.
   - [ ] stdin parse errors do not leak raw input to stdout/stderr/logs.
 - [ ] command migration behavior:
@@ -249,9 +251,9 @@ Rollout Plan:
 2.1. Add fail-closed guardrails to prohibit implicit fallback when keychain is unavailable.
 3. Wire profile metadata integration from PROJ-2026-006.
 3.1. Enforce metadata config path (`~/.wbcli/config.yaml`) and owner-only file mode (`0600`) on macOS/Linux.
-4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
+4. Implement `auth login` stdin-only credential input path (`api_key` + `api_secret`) with tests.
 4.1. Remove legacy `auth set` command wiring and ensure `auth login` + `auth use` are the active entrypoints.
-4.2. Implement strict stdin parser contract for `--api-secret-stdin` (bounded read, newline handling, multi-line rejection, no-leak errors).
+4.2. Implement strict stdin credential parser contract (bounded read, two-line contract, newline handling, no-leak errors).
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
 5.2. Add credential overwrite guardrails (interactive confirm and non-interactive `--force` behavior) with leak-safe output handling.
@@ -261,7 +263,7 @@ Rollout Plan:
 9. Implement `auth current` metadata read path with safe output tests.
 9.1. Implement shared auth redaction helper and wire all auth command outputs/logging through it.
 10. Add command-level docs/help text updates for secure usage.
-10.1. Update README with clear simple-language explanation of secret input behavior (prompt vs stdin), with safe examples and warning against command-argument secrets.
+10.1. Update README with clear simple-language explanation of stdin-only credential input behavior, with safe examples and warning against command-argument credentials.
 10.2. Add/verify `cobra.Command.Example` text for all auth commands with safe usage examples.
 10.3. Add operational key-hygiene section to README and concise security-hygiene notes in Cobra auth help text.
 11. Run verification for `login/use/list/logout/current` and capture evidence.
@@ -281,7 +283,7 @@ Verification Evidence (Required In Review):
 - explicit proof that keychain-unavailable path fails closed with no implicit fallback write
 - explicit proof that redaction contract is enforced in normal and verbose modes
 - explicit proof that secret memory-lifetime controls are implemented (minimal lifetime, cleared buffers, no secret in errors/logs)
-- explicit proof that stdin parser contract is enforced (newline handling, empty/multiline/oversize rejection, no-leak errors)
+- explicit proof that stdin parser contract is enforced (two-line key/secret contract, newline handling, empty/missing/extra-line/oversize rejection, no-leak errors)
 - README excerpt/evidence showing simple-language auth input guidance and safe usage examples
 - CLI help evidence showing `Example` blocks for auth commands
 - README excerpt/evidence showing operational key-hygiene guidance (per-profile keys, least privilege, allowlist, rotation/revoke)
@@ -317,7 +319,7 @@ Status Notes:
 - 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
 - 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
 - 2026-02-26: Confirmed migration strategy for this project: remove legacy `auth set` and use `auth login` + `auth use` only.
-- 2026-02-26: Added strict `--api-secret-stdin` parser contract (bounded read, newline policy, multiline rejection, no-leak failures).
+- 2026-02-26: Changed `auth login` to stdin-only credential input (removed `--api-key`, removed prompt input path, and replaced `--api-secret-stdin` contract with a strict two-line stdin contract).
 
 Final Note (Mandatory):
 - add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.
