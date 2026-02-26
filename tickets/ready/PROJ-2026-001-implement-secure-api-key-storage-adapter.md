@@ -126,6 +126,10 @@ Acceptance Criteria:
   - [ ] no profile normalization is allowed; invalid profile input fails hard with explicit error.
   - [ ] profile format validation scope for this ticket is `auth login` only (profile creation path).
   - [ ] empty API key/secret fails with clear error.
+  - [ ] if credentials already exist for the profile, overwrite is blocked unless explicitly confirmed.
+  - [ ] non-interactive overwrite requires explicit `--force`; otherwise fail with actionable error.
+  - [ ] interactive overwrite requires explicit confirmation prompt.
+  - [ ] overwrite flow must never print old/new secret values.
   - [ ] credentials are written to `os-keychain` only.
   - [ ] if keychain is unavailable, command fails closed with actionable message (no silent insecure fallback).
   - [ ] fallback to insecure storage (plaintext file/env/arg) is strictly prohibited.
@@ -179,6 +183,12 @@ Acceptance Criteria:
 
 Test Matrix:
 - [ ] `auth login`: interactive secret input success, stdin secret input success, missing profile, invalid profile format (spaces/special chars/unicode/too long), missing key, empty secret, keychain unavailable, permission denied.
+- [ ] overwrite control behavior:
+  - [ ] new profile create path succeeds without overwrite confirmation.
+  - [ ] existing profile update without confirmation/`--force` is rejected.
+  - [ ] interactive confirmed overwrite succeeds.
+  - [ ] non-interactive overwrite with `--force` succeeds.
+  - [ ] overwrite path does not leak old/new secret values.
 - [ ] fail-closed storage behavior:
   - [ ] when keychain is unavailable, command returns actionable error and exits non-zero.
   - [ ] verify there is no fallback write to plaintext config, env-based cache, or other implicit storage.
@@ -218,6 +228,7 @@ Rollout Plan:
 4. Implement `auth login` flags/input path only (hidden prompt + stdin option) with tests.
 5. Implement `auth login` validation + storage write path via `AuthLoginService` with tests.
 5.1. Add secret buffer lifecycle handling (minimal lifetime + best-effort wipe + no unnecessary copies).
+5.2. Add credential overwrite guardrails (interactive confirm and non-interactive `--force` behavior) with leak-safe output handling.
 6. Implement `auth profiles list` metadata-only read path with redaction tests.
 7. Implement `auth use` active-profile selection path with metadata-only update tests.
 8. Implement `auth logout` delete path and idempotency behavior with tests.
@@ -272,3 +283,4 @@ Status Notes:
 - 2026-02-26: Added strict profile validation rule for `auth login` only (no normalization; hard errors for invalid values).
 - 2026-02-26: Added secret memory-lifetime security point (minimal in-memory lifetime, best-effort buffer wipe, and no secret propagation in errors/logs).
 - 2026-02-26: Added cross-platform security verification requirement (macOS/Linux) and mandated alignment with existing CI test/build workflows.
+- 2026-02-26: Added overwrite security control for `auth login` (explicit confirmation/`--force`, no silent overwrite, no secret leakage on update path).
