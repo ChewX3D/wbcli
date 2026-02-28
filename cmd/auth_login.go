@@ -22,7 +22,7 @@ func newAuthLoginCmd() *cobra.Command {
 
   # Option 3: local file with exactly two lines
   # line 1 = api key, line 2 = api secret
-  cat ./secrets/wbcli-auth.txt | wbcli auth login`,
+  cat /tmp/wbcli-auth.txt | wbcli auth login`,
 		RunE: func(command *cobra.Command, args []string) error {
 			if inputFile, ok := command.InOrStdin().(*os.File); ok && clitools.IsTerminalInput(inputFile) {
 				return mapAuthError(clitools.ErrCredentialInputMissing)
