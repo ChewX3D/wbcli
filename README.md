@@ -69,6 +69,8 @@ go run . --help
 Local shell example:
 
 ```bash
+export WBCLI_API_KEY='your_api_key'
+export WBCLI_API_SECRET='your_api_secret'
 printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
 ```
 
@@ -76,6 +78,27 @@ CI example:
 
 ```bash
 printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+```
+
+Common shell pitfall:
+
+`WBCLI_API_KEY=1 WBCLI_API_SECRET=2 printf ...` does not work with `"$WBCLI_API_KEY"` expansion in the same command line.
+
+- shell expands `"$WBCLI_API_KEY"` before applying inline `VAR=value` to `printf`
+- result: empty values may be piped into `wbcli auth login`
+
+Use one of these instead:
+
+```bash
+# export first
+export WBCLI_API_KEY='your_api_key'
+export WBCLI_API_SECRET='your_api_secret'
+printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+```
+
+```bash
+# or avoid env vars entirely (not recommended for shell history safety)
+printf '%s\n%s\n' 'your_api_key' 'your_api_secret' | wbcli auth login
 ```
 
 Other auth commands:
