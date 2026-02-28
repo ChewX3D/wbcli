@@ -3,12 +3,12 @@
 ID: PROJ-2026-017
 Title: Finalize auth test and capture macOS/Linux auth security evidence
 Priority: P1
-Status: Ready
+Status: Blocked
 Owner: chewbaccalol
 Due Date: 2026-03-10
 Created: 2026-02-28
 Updated: 2026-02-28
-Links: [PROJ-2026-001](../done/PROJ-2026-001-implement-secure-api-key-storage-adapter.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-016](../done/PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
+Links: [PROJ-2026-001](../done/PROJ-2026-001-implement-secure-api-key-storage-adapter.md), [PROJ-2026-002](../ready/PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-016](../done/PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
 
 Problem:
 `PROJ-2026-001` was closed for single-session auth storage scope, but two required security-delivery items remain:
@@ -64,3 +64,4 @@ Status Notes:
 - 2026-02-28: Created in Ready.
 - 2026-02-28: Scope extracted from PROJ-2026-001 canonical checklist to allow closing PROJ-2026-001 while tracking remaining auth test and platform evidence work.
 - 2026-02-28: Manual verification update from user: `auth login` and `auth logout` confirmed working on macOS; Linux not tested yet.
+- 2026-02-28: Deferred: auth test is future scope until WhiteBIT client (PROJ-2026-002) is started.
