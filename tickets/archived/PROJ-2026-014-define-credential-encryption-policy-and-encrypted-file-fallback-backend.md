@@ -3,11 +3,11 @@
 ID: PROJ-2026-014
 Title: Define credential encryption policy and encrypted-file fallback backend
 Priority: P1
-Status: Ready
+Status: Archived
 Owner: chewbaccalol
 Due Date: 2026-03-01
 Created: 2026-02-26
-Updated: 2026-02-26
+Updated: 2026-02-28
 Links: [CLI Design](../../docs/cli-design.md), [WhiteBIT Integration](../../docs/whitebit-integration.md), [WhiteBIT HTTP Auth](https://docs.whitebit.com/private/http-auth)
 
 Problem:
@@ -40,3 +40,4 @@ Rollback Plan:
 Status Notes:
 - 2026-02-26: Created in Ready.
 - 2026-02-26: Added to formalize encryption at rest and fallback behavior.
+- 2026-02-28: Canceled by requester.

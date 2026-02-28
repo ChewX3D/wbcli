@@ -3,11 +3,11 @@
 ID: PROJ-2026-007
 Title: Set up CI quality gates and Go test baseline
 Priority: P1
-Status: Ready
+Status: Archived
 Owner: chewbaccalol
 Due Date: 2026-03-02
 Created: 2026-02-26
-Updated: 2026-02-26
+Updated: 2026-02-28
 Links: [AGENTS](../../AGENTS.md), [Ticket Workflow](../README.md)
 
 Problem:
@@ -39,3 +39,4 @@ Rollback Plan:
 Status Notes:
 - 2026-02-26: Created in Ready.
 - 2026-02-26: Added as Phase 0 quality gate before full MVP feature velocity.
+- 2026-02-28: Canceled by requester.
