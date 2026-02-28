@@ -23,8 +23,7 @@ Acceptance Criteria:
 - [x] Unit tests verify signature generation and payload wiring.
 - [x] Integration-style tests with mock server validate headers/body for:
   - `/api/v4/collateral-account/hedge-mode`
-  - `/api/v4/order/collateral/limit`
-  - `/api/v4/order/collateral/bulk`
+- [x] Safety policy: order-submission endpoints are not covered by integration tests.
 
 Risks:
 - Nonce collisions can cause hard-to-debug intermittent failures.
@@ -44,3 +43,4 @@ Status Notes:
 - 2026-02-26: Updated due date to reflect sequencing after project scaffold.
 - 2026-02-28: Started implementation.
 - 2026-02-28: Implemented shared signed WhiteBIT client with hedge-mode, collateral limit, and collateral bulk endpoints; auth login now reuses this client.
+- 2026-02-28: Removed integration-style tests for order submission endpoints due safety requirement.

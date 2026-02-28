@@ -19,9 +19,9 @@ Outcome:
 Acceptance Criteria:
 - [ ] Command supports required fields (`market`, `side`, `amount`, `price`, `expiration`) and optional flags.
 - [ ] Input validation blocks invalid combinations such as `rpi=true` with `ioc=true`.
-- [ ] Command reads credentials by profile and uses signed client adapter.
+- [ ] Command reads credentials from single-session auth state and uses signed client adapter.
 - [ ] Output contract includes `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]`.
-- [ ] Integration tests cover successful placement and representative validation/auth failures.
+- [ ] Unit tests cover successful placement and representative validation/auth failures; no integration tests for order submission endpoints.
 
 Risks:
 - Precision/notional validation gaps can cause rejected orders.
@@ -40,3 +40,4 @@ Status Notes:
 - 2026-02-26: Created in Backlog.
 - 2026-02-26: Sequenced for MVP after secure key storage and signed client are complete.
 - 2026-02-26: Promoted to Ready with explicit dependency ordering and acceptance checks.
+- 2026-02-28: Updated for single-session auth and safety policy (no order integration tests).
