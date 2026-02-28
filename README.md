@@ -69,15 +69,13 @@ go run . --help
 Local shell example:
 
 ```bash
-export WBCLI_API_KEY='your_api_key'
-export WBCLI_API_SECRET='your_api_secret'
-printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+WBCLI_API_KEY='1' WBCLI_API_SECRET='2' sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 ```
 
 CI example:
 
 ```bash
-printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 ```
 
 Common shell pitfall:
@@ -90,15 +88,13 @@ Common shell pitfall:
 Use one of these instead:
 
 ```bash
-# export first
-export WBCLI_API_KEY='your_api_key'
-export WBCLI_API_SECRET='your_api_secret'
-printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+# set values inline (local test)
+WBCLI_API_KEY='1' WBCLI_API_SECRET='2' sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 ```
 
 ```bash
-# or avoid env vars entirely (not recommended for shell history safety)
-printf '%s\n%s\n' 'your_api_key' 'your_api_secret' | wbcli auth login
+# when env vars already exist (for example in CI)
+sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 ```
 
 Other auth commands:

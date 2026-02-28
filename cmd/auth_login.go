@@ -14,13 +14,11 @@ func newAuthLoginCmd() *cobra.Command {
 		Use:   "login",
 		Short: "Store credentials from stdin",
 		Long:  "Store API key and API secret in secure OS keychain backend using stdin-only input.",
-		Example: `  # Option 1: export env vars first, then pipe them
-  export WBCLI_API_KEY='your_api_key'
-  export WBCLI_API_SECRET='your_api_secret'
-  printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+		Example: `  # Option 1: local inline values
+  WBCLI_API_KEY='1' WBCLI_API_SECRET='2' sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 
-  # Option 2: CI job with secrets injected as env vars
-  printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+  # Option 2: CI job with env vars already injected
+  sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 
   # Option 3: local file with exactly two lines
   # line 1 = api key, line 2 = api secret
