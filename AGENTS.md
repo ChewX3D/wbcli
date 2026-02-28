@@ -218,6 +218,17 @@ Merge policy:
 - `infra/ci`: dry-run in non-prod path where possible
 - `hotfix`: minimal reproducer test added within 24 hours post-fix
 
+## Project Readiness Quality Gate (MANDATORY)
+
+Before considering a change ready, run these checks when relevant to the change:
+
+- `gofmt -w` on changed Go files
+- `go vet ./...`
+- `go test ./...`
+- `go build .`
+
+If any step fails, the change is not ready and must be fixed before merge/push.
+
 ## CLI Installability Requirement
 
 VERY IMPORTANT (MANDATORY):
