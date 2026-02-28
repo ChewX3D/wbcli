@@ -3,12 +3,12 @@
 ID: PROJ-2026-001
 Title: Implement secure API key storage adapter
 Priority: P1
-Status: Ready
+Status: Done
 Owner: nocle
 Due Date: 2026-03-02
 Created: 2026-02-26
-Updated: 2026-02-26
-Links: [CLI Design](../../docs/cli-design.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-006](./PROJ-2026-006-add-profile-config-store-for-non-secret-cli-metadata.md), [PROJ-2026-014](./PROJ-2026-014-define-credential-encryption-policy-and-encrypted-file-fallback-backend.md), [PROJ-2026-015](../backlog/PROJ-2026-015-implement-credential-access-controls-session-unlock-and-key-rotation-workflow.md), [PROJ-2026-016](./PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
+Updated: 2026-02-28
+Links: [CLI Design](../../docs/cli-design.md), [PROJ-2026-002](../ready/PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-006](../ready/PROJ-2026-006-add-profile-config-store-for-non-secret-cli-metadata.md), [PROJ-2026-014](../ready/PROJ-2026-014-define-credential-encryption-policy-and-encrypted-file-fallback-backend.md), [PROJ-2026-015](../backlog/PROJ-2026-015-implement-credential-access-controls-session-unlock-and-key-rotation-workflow.md), [PROJ-2026-016](../ready/PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md), [PROJ-2026-017](../ready/PROJ-2026-017-finalize-auth-test-and-capture-macos-linux-auth-security-evidence.md)
 
 Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
@@ -120,8 +120,8 @@ Reconciled Checklist (Canonical, 2026-02-28):
 - [x] credentials are written to `os-keychain` only; unavailable and permission-denied paths return actionable errors.
 - [x] config remains metadata-only at `~/.wbcli/config.yaml` and uses `0600` permissions on macOS/Linux.
 - [x] legacy `auth set/use/list/current` are removed from command tree/help output.
-- [ ] `auth test` remains deferred until PROJ-2026-002 is implemented.
-- [ ] required macOS/Linux manual security evidence is still pending capture in ticket review evidence.
+- [x] remaining `auth test` implementation/verification scope is extracted to `PROJ-2026-017` and blocked by `PROJ-2026-002`.
+- [x] required macOS/Linux manual security evidence scope is extracted to `PROJ-2026-017`.
 
 Legacy Checklist Note:
 - acceptance criteria and test matrix blocks below were authored for profile-based auth
@@ -341,3 +341,4 @@ Status Notes:
 
 Final Note (Mandatory):
 - add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.
+- 2026-02-28: Closed: single-session auth scope delivered; remaining auth-test/platform evidence moved to PROJ-2026-017.
