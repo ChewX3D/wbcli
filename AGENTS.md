@@ -53,18 +53,69 @@ Rules:
 - when implementing ticket scope, immediately mark completed acceptance/test checklist points as done (`[x]`) in the same change set
 - do not leave completed ticket points unchecked; keep ticket progress state accurate at all times
 
-## Spec Folder Model
+## Current State In AGENTS (MANDATORY)
 
-`docs/specifications/` is the canonical current-state snapshot of the system.
+`AGENTS.md` is the canonical current-state snapshot of the system.
 
 Interpretation rules:
 
-- tickets are change history (event stream): they describe what happened and why
-- `docs/specifications/` is system state (materialized result): it describes what is true now
-- when ticket implementation changes intended behavior/architecture/contracts, update affected files in `docs/specifications/` in the same change set
-- if ticket text and `docs/specifications/` disagree, `docs/specifications/` is source of truth for current behavior; ticket keeps historical context
-- avoid keeping long-lived behavior definitions only in tickets; move final decisions into `docs/specifications/`
-- keep specs concise, readable, and human-oriented: prefer short sections, explicit behavior contracts, and minimal prose
+- tickets are change history (event stream): they describe what changed and why
+- `AGENTS.md` captures the materialized current behavior of the system
+- when behavior/contracts/command UX/storage/security boundaries change, update current-state sections in `AGENTS.md` in the same change set
+- if ticket text and `AGENTS.md` differ, `AGENTS.md` is source of truth for current behavior
+- keep current-state sections concise, readable, and human-oriented (small sections, explicit contracts, minimal prose)
+
+## Current System State
+
+### Auth Subcommands
+
+Current model:
+
+- `wbcli auth` is single-session only (`logged in` or `logged out`)
+- no profile model in auth flow
+
+Available commands:
+
+- `wbcli auth login`
+- `wbcli auth logout`
+- `wbcli auth status`
+- `wbcli auth test`
+
+Removed commands:
+
+- `wbcli auth set`
+- `wbcli auth use`
+- `wbcli auth list`
+- `wbcli auth current`
+
+`auth login` contract:
+
+- stdin-only credential input
+- exactly two non-empty logical lines:
+  - line 1 = API key
+  - line 2 = API secret
+- max payload size: `16 KiB`
+- no `--api-key`, no `--api-secret`, no `--profile`
+
+Outputs:
+
+- `auth login`: `logged_in=true backend=<backend> api_key=<masked_hint> saved_at=<timestamp>`
+- `auth logout`: `logged_out=true`
+- `auth status`:
+  - `logged_in=false`
+  - or `logged_in=true backend=<backend> api_key=<masked_hint> updated_at=<timestamp>`
+
+Storage/security boundaries:
+
+- secrets are stored in `os-keychain` backend only
+- non-secret metadata is stored in `~/.wbcli/config.yaml`
+- config permission target on macOS/Linux: `0600`
+- command outputs/errors must not leak API secret, payload, or signature values
+
+Auth test status:
+
+- `auth test` remains deferred/future scope until WhiteBIT client work (`PROJ-2026-002`) is implemented
+- tracking ticket: `PROJ-2026-017` (currently `Blocked`)
 
 ## Backlog And Todo Workflow
 
@@ -437,7 +488,6 @@ internal/
   cli/
 mocks/
 docs/
-  specifications/
 configs/
 tickets/
 scripts/
@@ -471,10 +521,6 @@ What goes where:
   - do not hand-edit generated files; regenerate with `make gen-mocks`
 - `docs/`
   - product, architecture, and operational documentation
-- `docs/specifications/`
-  - canonical snapshot of current system behavior, architecture, interfaces, and constraints
-  - update when accepted behavior changes; do not treat tickets as long-term source of truth
-  - keep specifications small, readable, and easy to scan for humans
 - `configs/`
   - static config artifacts (badges, templates, build/runtime config)
 - `tickets/`
@@ -502,7 +548,7 @@ Specific rule for current roadmap:
 When behavior changes, update docs in the same change set:
 
 - user-facing usage docs
-- files in `docs/specifications/` that define current behavior/contracts
+- current-state sections in `AGENTS.md`
 - architecture/design notes when boundaries change
 - runbook/ops docs when operational steps change
 
