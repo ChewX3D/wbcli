@@ -1,2 +1,2 @@
-// Package whitebit contains WhiteBIT transport and API mapping adapters.
+// Package whitebit contains WhiteBIT signed transport and API mapping adapters.
 package whitebit

@@ -24,7 +24,7 @@ func defaultAuthServicesFactory() (*authServices, error) {
 	}
 
 	credentialStore := secretstore.NewOSKeychainStore()
-	authProbe := whitebit.NewDefaultAuthProbe()
+	authProbe := whitebit.NewDefaultClient()
 	clock := authservice.SystemClock{}
 
 	return &authServices{
