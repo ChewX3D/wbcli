@@ -68,20 +68,20 @@ Acceptance Criteria:
   - [x] `auth login` overwrites existing session credential by default.
   - [x] `auth logout` clears credential and session metadata; idempotent when already logged out.
   - [x] `auth test` keeps current scope and dependency on PROJ-2026-002.
-- [ ] Test and docs coverage:
+- [x] Test and docs coverage:
   - [x] tests cover single-session command success and failure paths.
   - [x] docs/examples are updated to no-profile commands.
-  - [ ] `PROJ-2026-001` checklist is reconciled to this new scope.
+  - [x] `PROJ-2026-001` checklist is reconciled to this new scope.
 
 Test Matrix:
 - [x] `auth login` valid stdin payload creates session.
 - [x] `auth login` invalid stdin payload fails with clear error.
 - [x] `auth login` overwrites existing session when already logged in.
-- [ ] `auth logout` succeeds when logged in.
-- [ ] `auth logout` succeeds (idempotent) when logged out.
+- [x] `auth logout` succeeds when logged in.
+- [x] `auth logout` succeeds (idempotent) when logged out.
 - [x] `auth status` reports logged-out state.
-- [ ] `auth status` reports logged-in safe metadata.
-- [ ] keychain unavailable/permission-denied paths return actionable errors.
+- [x] `auth status` reports logged-in safe metadata.
+- [x] keychain unavailable/permission-denied paths return actionable errors.
 - [x] config assertions confirm metadata-only and `0600` permissions.
 - [x] removed commands (`use/list/current`) return unknown command errors.
 
@@ -110,3 +110,4 @@ Status Notes:
 - 2026-02-28: Marked as scope override for profile-related parts of PROJ-2026-001.
 - 2026-02-28: Implemented single-session auth architecture and command surface (`login/logout/status/test`), with profile flags and profile commands removed.
 - 2026-02-28: Removed `--force` from `auth login`; login now overwrites existing session by default.
+- 2026-02-28: Added command-level tests for `auth logout` (logged-in + idempotent), `auth status` logged-in output, and actionable unavailable/permission-denied auth errors; reconciled PROJ-2026-001 checklist to single-session scope.

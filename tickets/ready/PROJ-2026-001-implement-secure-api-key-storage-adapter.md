@@ -14,20 +14,19 @@ Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
 
 Outcome:
-`wbcli auth login/use/list/logout/current/test` work end-to-end with profile isolation and secure-by-default behavior on `os-keychain`, with no secret leakage in files, logs, or command output.
+`wbcli auth login/logout/status/test` work end-to-end in single-session mode with secure-by-default behavior on `os-keychain`, with no secret leakage in files, logs, or command output.
 
 Scope:
-- implement `auth login/use/list/logout/current/test` against `os-keychain` backend
-- store only non-secret profile metadata in local config
+- implement `auth login/logout/status/test` against `os-keychain` backend
+- store only non-secret session metadata in local config
 - enforce safe input and redaction rules in command handlers and tests
 
 Command Model Examples (Approved):
-- `wbcli auth list`
-- `wbcli auth use <profile>`
-- `wbcli auth login --profile <profile>`
-- `wbcli auth logout --profile <profile>`
-- `wbcli auth current`
-- `printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile <profile>`
+- `wbcli auth login`
+- `wbcli auth logout`
+- `wbcli auth status`
+- `wbcli auth test`
+- `printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login`
 - legacy `wbcli auth set` must be removed (no compatibility shim required for this project)
 
 Auth Login Architecture (Hexagonal, Mandatory):
@@ -113,6 +112,20 @@ Dependencies:
 Scope Update (2026-02-28):
 - profile-oriented command model and checklist items in this ticket are superseded by PROJ-2026-016 (single-session auth model)
 - completion of this ticket must be evaluated together with PROJ-2026-016 acceptance criteria and remaining security/test coverage work
+
+Reconciled Checklist (Canonical, 2026-02-28):
+- [x] auth command model is single-session (`login/logout/status/test`) with no profile command/flag dependencies.
+- [x] `auth login` uses stdin-only two-line credential input (`api_key`, `api_secret`) and rejects invalid payloads.
+- [x] `auth login` overwrites existing session credentials by default (no `--force` flow).
+- [x] credentials are written to `os-keychain` only; unavailable and permission-denied paths return actionable errors.
+- [x] config remains metadata-only at `~/.wbcli/config.yaml` and uses `0600` permissions on macOS/Linux.
+- [x] legacy `auth set/use/list/current` are removed from command tree/help output.
+- [ ] `auth test` remains deferred until PROJ-2026-002 is implemented.
+- [ ] required macOS/Linux manual security evidence is still pending capture in ticket review evidence.
+
+Legacy Checklist Note:
+- acceptance criteria and test matrix blocks below were authored for profile-based auth
+- they are retained as historical context only and are superseded by the canonical reconciled checklist above plus PROJ-2026-016
 
 Acceptance Criteria:
 - [x] `auth login` input mode is secure by default:
