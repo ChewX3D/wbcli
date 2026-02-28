@@ -8,7 +8,7 @@ Owner: chewbaccalol
 Due Date: 2026-03-10
 Created: 2026-02-28
 Updated: 2026-02-28
-Links: [PROJ-2026-001](../done/PROJ-2026-001-implement-secure-api-key-storage-adapter.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-016](./PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
+Links: [PROJ-2026-001](../done/PROJ-2026-001-implement-secure-api-key-storage-adapter.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-016](../done/PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
 
 Problem:
 `PROJ-2026-001` was closed for single-session auth storage scope, but two required security-delivery items remain:
@@ -28,17 +28,17 @@ Acceptance Criteria:
   - unknown/internal failure
 - [ ] `auth test` output and errors do not leak API secret, payload, signature, or full API key.
 - [ ] manual macOS verification evidence is captured for auth flow:
-  - login
-  - status
-  - logout
-  - keychain unavailable and permission-denied scenarios
-  - metadata-only + `0600` config assertions
+  - [x] login
+  - [ ] status
+  - [x] logout
+  - [ ] keychain unavailable and permission-denied scenarios
+  - [ ] metadata-only + `0600` config assertions
 - [ ] manual Linux verification evidence is captured for auth flow:
-  - login
-  - status
-  - logout
-  - keychain unavailable and permission-denied scenarios
-  - metadata-only + `0600` config assertions
+  - [ ] login
+  - [ ] status
+  - [ ] logout
+  - [ ] keychain unavailable and permission-denied scenarios
+  - [ ] metadata-only + `0600` config assertions
 - [ ] README includes short section pointing to where auth security verification evidence is tracked.
 - [ ] `go test ./...` and `go build .` pass after `auth test` implementation.
 
@@ -63,3 +63,4 @@ Rollback Plan:
 Status Notes:
 - 2026-02-28: Created in Ready.
 - 2026-02-28: Scope extracted from PROJ-2026-001 canonical checklist to allow closing PROJ-2026-001 while tracking remaining auth test and platform evidence work.
+- 2026-02-28: Manual verification update from user: `auth login` and `auth logout` confirmed working on macOS; Linux not tested yet.

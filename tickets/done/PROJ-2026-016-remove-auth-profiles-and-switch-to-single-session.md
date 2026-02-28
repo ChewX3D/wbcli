@@ -3,7 +3,7 @@
 ID: PROJ-2026-016
 Title: Remove auth profiles and switch to single-session auth
 Priority: P1
-Status: Ready
+Status: Done
 Owner: nocle
 Due Date: 2026-03-03
 Created: 2026-02-28
@@ -111,3 +111,4 @@ Status Notes:
 - 2026-02-28: Implemented single-session auth architecture and command surface (`login/logout/status/test`), with profile flags and profile commands removed.
 - 2026-02-28: Removed `--force` from `auth login`; login now overwrites existing session by default.
 - 2026-02-28: Added command-level tests for `auth logout` (logged-in + idempotent), `auth status` logged-in output, and actionable unavailable/permission-denied auth errors; reconciled PROJ-2026-001 checklist to single-session scope.
+- 2026-02-28: Closed: implementation complete and manually confirmed login/logout working on macOS; Linux manual verification tracked separately in PROJ-2026-017.
