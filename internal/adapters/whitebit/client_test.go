@@ -137,7 +137,7 @@ func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 
 			client := NewClient(server.URL, server.Client(), fixedNonceSource{value: 1})
 			adapter := NewCredentialVerifierAdapter(client)
-			err := adapter.Verify(context.Background(), domainauth.Credential{
+			_, err := adapter.Verify(context.Background(), domainauth.Credential{
 				APIKey:    "public-key",
 				APISecret: []byte("secret-key"),
 			})
@@ -145,6 +145,28 @@ func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 				t.Fatalf("expected error %v, got %v", testCase.expectedErr, err)
 			}
 		})
+	}
+}
+
+func TestCredentialVerifierAdapterVerifyReturnsEndpointOnSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write([]byte(`{"hedgeMode":true}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, server.Client(), fixedNonceSource{value: 1})
+	adapter := NewCredentialVerifierAdapter(client)
+
+	result, err := adapter.Verify(context.Background(), domainauth.Credential{
+		APIKey:    "public-key",
+		APISecret: []byte("secret-key"),
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.Endpoint != collateralAccountHedgeModePath {
+		t.Fatalf("expected endpoint %q, got %q", collateralAccountHedgeModePath, result.Endpoint)
 	}
 }
 

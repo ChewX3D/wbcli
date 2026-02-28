@@ -75,18 +75,23 @@ type fakeCredentialVerifier struct {
 	err        error
 	callCount  int
 	lastAPIKey string
+	endpoint   string
 }
 
-func (verifier *fakeCredentialVerifier) Verify(_ context.Context, credential domainauth.Credential) error {
+func (verifier *fakeCredentialVerifier) Verify(_ context.Context, credential domainauth.Credential) (ports.CredentialVerificationResult, error) {
 	verifier.callCount++
 	verifier.lastAPIKey = credential.APIKey
-	return verifier.err
+	if verifier.err != nil {
+		return ports.CredentialVerificationResult{}, verifier.err
+	}
+
+	return ports.CredentialVerificationResult{Endpoint: verifier.endpoint}, nil
 }
 
 func TestLoginServiceExecuteSuccess(t *testing.T) {
 	credentialStore := &fakeCredentialStore{backendName: "os-keychain"}
 	sessionStore := &fakeSessionStore{}
-	credentialVerifier := &fakeCredentialVerifier{}
+	credentialVerifier := &fakeCredentialVerifier{endpoint: "/api/v4/collateral-account/hedge-mode"}
 	service := NewLoginService(
 		credentialStore,
 		sessionStore,
@@ -137,7 +142,7 @@ func TestLoginServiceExecuteOverwritesExistingCredential(t *testing.T) {
 		credential:  &domainauth.Credential{APIKey: "old", APISecret: []byte("old-secret")},
 	}
 	sessionStore := &fakeSessionStore{}
-	credentialVerifier := &fakeCredentialVerifier{}
+	credentialVerifier := &fakeCredentialVerifier{endpoint: "/api/v4/collateral-account/hedge-mode"}
 	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()}, credentialVerifier)
 
 	result, err := service.Execute(context.Background(), LoginRequest{

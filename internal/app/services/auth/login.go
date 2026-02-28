@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
@@ -58,9 +59,11 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 	if service.credentialVerifier == nil {
 		return LoginResult{}, ports.ErrCredentialVerifyUnavailable
 	}
-	if err := service.credentialVerifier.Verify(ctx, credential); err != nil {
-		return LoginResult{}, fmt.Errorf("probe credential: %w", err)
+	verificationResult, err := service.credentialVerifier.Verify(ctx, credential)
+	if err != nil {
+		return LoginResult{}, fmt.Errorf("verify credential: %w", err)
 	}
+	slog.Info("auth credential verified", "endpoint", verificationResult.Endpoint)
 
 	previous, found, err := service.sessionStore.GetSession(ctx)
 	if err != nil {

@@ -201,7 +201,7 @@ func TestAuthLoginUnavailableStoreReturnsActionableError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if !strings.Contains(err.Error(), "os-keychain backend is unavailable on this system") {
+	if !strings.Contains(err.Error(), "os-keychain backend is unavailable on this system; install/unlock keychain backend and retry") {
 		t.Fatalf("expected actionable unavailable error, got %v", err)
 	}
 }
@@ -219,7 +219,7 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if !strings.Contains(err.Error(), "whitebit auth failed; check your public key and secret key") {
+	if !strings.Contains(err.Error(), "credentials are invalid") {
 		t.Fatalf("expected actionable auth-failed error, got %v", err)
 	}
 }
@@ -237,7 +237,7 @@ func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if !strings.Contains(err.Error(), "os-keychain access denied; unlock keychain/secret service and retry") {
+	if !strings.Contains(err.Error(), "os-keychain access denied; keychain is locked or access is restricted") {
 		t.Fatalf("expected actionable permission-denied error, got %v", err)
 	}
 }
@@ -432,6 +432,10 @@ type testCredentialVerifier struct {
 	err error
 }
 
-func (verifier *testCredentialVerifier) Verify(_ context.Context, _ domainauth.Credential) error {
-	return verifier.err
+func (verifier *testCredentialVerifier) Verify(_ context.Context, _ domainauth.Credential) (ports.CredentialVerificationResult, error) {
+	if verifier.err != nil {
+		return ports.CredentialVerificationResult{}, verifier.err
+	}
+
+	return ports.CredentialVerificationResult{Endpoint: "/api/v4/collateral-account/hedge-mode"}, nil
 }

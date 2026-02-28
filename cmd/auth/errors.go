@@ -30,15 +30,15 @@ func mapError(err error) error {
 	case errors.Is(err, ports.ErrCredentialNotFound):
 		return errors.New("not logged in; run wbcli auth login first")
 	case errors.Is(err, ports.ErrSecretStoreUnavailable):
-		return errors.New("os-keychain backend is unavailable on this system")
+		return errors.New("os-keychain backend is unavailable on this system; install/unlock keychain backend and retry")
 	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
-		return errors.New("os-keychain access denied; unlock keychain/secret service and retry")
+		return errors.New("os-keychain access denied; keychain is locked or access is restricted")
 	case errors.Is(err, ports.ErrCredentialVerifyUnauthorized):
-		return errors.New("whitebit auth failed; check your public key and secret key")
+		return errors.New("whitebit credential verification failed: credentials are invalid (wrong public/secret key pair, disabled key, or signature/nonce rejected)")
 	case errors.Is(err, ports.ErrCredentialVerifyForbidden):
-		return errors.New("whitebit auth succeeded but required permission is missing for collateral-account hedge-mode")
+		return errors.New("whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint /api/v4/collateral-account/hedge-mode")
 	case errors.Is(err, ports.ErrCredentialVerifyUnavailable):
-		return errors.New("whitebit auth check is unavailable right now; retry later")
+		return errors.New("whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later")
 	default:
 		return err
 	}

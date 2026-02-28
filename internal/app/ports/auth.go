@@ -52,7 +52,12 @@ type Clock interface {
 	Now() time.Time
 }
 
+// CredentialVerificationResult contains non-secret verification metadata.
+type CredentialVerificationResult struct {
+	Endpoint string
+}
+
 // CredentialVerifier verifies credential validity and required permission against WhiteBIT.
 type CredentialVerifier interface {
-	Verify(ctx context.Context, credential domainauth.Credential) error
+	Verify(ctx context.Context, credential domainauth.Credential) (CredentialVerificationResult, error)
 }
