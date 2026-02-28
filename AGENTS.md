@@ -55,15 +55,16 @@ Rules:
 
 ## Spec Folder Model
 
-`spec/` is the canonical current-state snapshot of the system.
+`docs/specifications/` is the canonical current-state snapshot of the system.
 
 Interpretation rules:
 
 - tickets are change history (event stream): they describe what happened and why
-- `spec/` is system state (materialized result): it describes what is true now
-- when ticket implementation changes intended behavior/architecture/contracts, update `spec/` in the same change set
-- if ticket text and `spec/` disagree, `spec/` is source of truth for current behavior; ticket keeps historical context
-- avoid keeping long-lived behavior definitions only in tickets; move final decisions into `spec/`
+- `docs/specifications/` is system state (materialized result): it describes what is true now
+- when ticket implementation changes intended behavior/architecture/contracts, update affected files in `docs/specifications/` in the same change set
+- if ticket text and `docs/specifications/` disagree, `docs/specifications/` is source of truth for current behavior; ticket keeps historical context
+- avoid keeping long-lived behavior definitions only in tickets; move final decisions into `docs/specifications/`
+- keep specs concise, readable, and human-oriented: prefer short sections, explicit behavior contracts, and minimal prose
 
 ## Backlog And Todo Workflow
 
@@ -436,7 +437,7 @@ internal/
   cli/
 mocks/
 docs/
-spec/
+  specifications/
 configs/
 tickets/
 scripts/
@@ -470,9 +471,10 @@ What goes where:
   - do not hand-edit generated files; regenerate with `make gen-mocks`
 - `docs/`
   - product, architecture, and operational documentation
-- `spec/`
+- `docs/specifications/`
   - canonical snapshot of current system behavior, architecture, interfaces, and constraints
   - update when accepted behavior changes; do not treat tickets as long-term source of truth
+  - keep specifications small, readable, and easy to scan for humans
 - `configs/`
   - static config artifacts (badges, templates, build/runtime config)
 - `tickets/`
@@ -500,6 +502,7 @@ Specific rule for current roadmap:
 When behavior changes, update docs in the same change set:
 
 - user-facing usage docs
+- files in `docs/specifications/` that define current behavior/contracts
 - architecture/design notes when boundaries change
 - runbook/ops docs when operational steps change
 
