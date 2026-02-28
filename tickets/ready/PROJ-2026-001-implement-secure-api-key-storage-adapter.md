@@ -8,7 +8,7 @@ Owner: nocle
 Due Date: 2026-03-02
 Created: 2026-02-26
 Updated: 2026-02-26
-Links: [CLI Design](../../docs/cli-design.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-006](./PROJ-2026-006-add-profile-config-store-for-non-secret-cli-metadata.md), [PROJ-2026-014](./PROJ-2026-014-define-credential-encryption-policy-and-encrypted-file-fallback-backend.md), [PROJ-2026-015](../backlog/PROJ-2026-015-implement-credential-access-controls-session-unlock-and-key-rotation-workflow.md)
+Links: [CLI Design](../../docs/cli-design.md), [PROJ-2026-002](./PROJ-2026-002-implement-whitebit-signed-http-client.md), [PROJ-2026-006](./PROJ-2026-006-add-profile-config-store-for-non-secret-cli-metadata.md), [PROJ-2026-014](./PROJ-2026-014-define-credential-encryption-policy-and-encrypted-file-fallback-backend.md), [PROJ-2026-015](../backlog/PROJ-2026-015-implement-credential-access-controls-session-unlock-and-key-rotation-workflow.md), [PROJ-2026-016](./PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md)
 
 Problem:
 Trading commands require API credentials, but storing secrets in plaintext config or shell history is unsafe.
@@ -109,6 +109,10 @@ Dependencies:
 - PROJ-2026-006 for profile metadata persistence model
 - PROJ-2026-002 for `auth test` authenticated connectivity verification behavior (final phase only)
 - PROJ-2026-014 for explicit fallback backend policy (must not be silently auto-enabled here)
+
+Scope Update (2026-02-28):
+- profile-oriented command model and checklist items in this ticket are superseded by PROJ-2026-016 (single-session auth model)
+- completion of this ticket must be evaluated together with PROJ-2026-016 acceptance criteria and remaining security/test coverage work
 
 Acceptance Criteria:
 - [x] `auth login` input mode is secure by default:
@@ -320,6 +324,7 @@ Status Notes:
 - 2026-02-26: Added operational key-hygiene documentation requirement (per-profile keys, least privilege, allowlist, rotation/revoke) for README and Cobra help.
 - 2026-02-26: Confirmed migration strategy for this project: remove legacy `auth set` and use `auth login` + `auth use` only.
 - 2026-02-26: Changed `auth login` to stdin-only credential input (removed `--api-key`, removed prompt input path, and replaced `--api-secret-stdin` contract with a strict two-line stdin contract).
+- 2026-02-28: Scope updated by PROJ-2026-016 to remove profiles and move auth to single-session mode; profile-based checklist items are superseded.
 
 Final Note (Mandatory):
 - add integration tests with mock secret-store/keychain adapters; do not run integration tests against real OS keychains.

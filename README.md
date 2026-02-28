@@ -20,8 +20,8 @@ This repository currently defines the project plan and operating docs for:
 - `auth`:
   - store API credentials in OS keychain/secret store where possible
   - never persist raw secrets in git-tracked files
-  - support profile-based credentials (for multiple accounts/environments)
-  - commands: `auth login`, `auth use`, `auth list`, `auth logout`, `auth current`, `auth test`
+  - single-session auth state: user is logged in or logged out
+  - commands: `auth login`, `auth logout`, `auth status`, `auth test`
 - `order place`:
   - place one collateral limit order via WhiteBIT authenticated API
 - `order range`:
@@ -69,23 +69,21 @@ go run . --help
 Local shell example:
 
 ```bash
-printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile prod
+printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
 ```
 
 CI example:
 
 ```bash
-printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --profile ci --force
+printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login --force
 ```
 
 Other auth commands:
 
 ```bash
-wbcli auth use --profile prod
-wbcli auth list
-wbcli auth current
-wbcli auth logout --profile prod
-wbcli auth test --profile prod
+wbcli auth status
+wbcli auth logout
+wbcli auth test
 ```
 
 Security notes:
@@ -93,6 +91,7 @@ Security notes:
 - do not pass API key or secret as command arguments
 - metadata only is written to `~/.wbcli/config.yaml`
 - credentials are stored via `os-keychain` backend
+- if you had old profile-based auth data, re-login once with the new single-session model
 
 ## Tests
 

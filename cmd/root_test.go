@@ -27,6 +27,18 @@ func executeCommand(args ...string) (string, string, error) {
 	return executeCommandWithInput("", args...)
 }
 
+func assertUnknownAuthSubcommand(t *testing.T, subcommand string) {
+	t.Helper()
+
+	_, _, err := executeCommand("auth", subcommand)
+	if err == nil {
+		t.Fatalf("expected unknown command error for %q", subcommand)
+	}
+	if !strings.Contains(err.Error(), "unknown command \""+subcommand+"\"") {
+		t.Fatalf("unexpected error for %q: %v", subcommand, err)
+	}
+}
+
 func TestRootHelpShowsMainGroups(t *testing.T) {
 	stdout, stderr, err := executeCommand("--help")
 	if err != nil {
@@ -50,43 +62,19 @@ func TestUnknownCommandReturnsError(t *testing.T) {
 }
 
 func TestLegacyAuthSetCommandRemoved(t *testing.T) {
-	_, _, err := executeCommand("auth", "set")
-	if err == nil {
-		t.Fatal("expected unknown command error")
-	}
-	if !strings.Contains(err.Error(), "unknown command \"set\"") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assertUnknownAuthSubcommand(t, "set")
 }
 
 func TestLegacyAuthUseCommandRemoved(t *testing.T) {
-	_, _, err := executeCommand("auth", "use")
-	if err == nil {
-		t.Fatal("expected unknown command error")
-	}
-	if !strings.Contains(err.Error(), "unknown command \"use\"") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assertUnknownAuthSubcommand(t, "use")
 }
 
 func TestLegacyAuthListCommandRemoved(t *testing.T) {
-	_, _, err := executeCommand("auth", "list")
-	if err == nil {
-		t.Fatal("expected unknown command error")
-	}
-	if !strings.Contains(err.Error(), "unknown command \"list\"") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assertUnknownAuthSubcommand(t, "list")
 }
 
 func TestLegacyAuthCurrentCommandRemoved(t *testing.T) {
-	_, _, err := executeCommand("auth", "current")
-	if err == nil {
-		t.Fatal("expected unknown command error")
-	}
-	if !strings.Contains(err.Error(), "unknown command \"current\"") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assertUnknownAuthSubcommand(t, "current")
 }
 
 func TestAuthLoginRejectsInvalidStdinContract(t *testing.T) {

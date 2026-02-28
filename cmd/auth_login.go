@@ -32,28 +32,25 @@ func newAuthLoginCmd() *cobra.Command {
 				return mapAuthError(err)
 			}
 
-			services, err := authServicesFactory()
-			if err != nil {
-				return mapAuthError(err)
-			}
+			return runWithAuthServices(command, func(services *authServices) error {
+				result, err := services.login.Execute(command.Context(), authservice.LoginRequest{
+					APIKey:    credentials.APIKey,
+					APISecret: credentials.APISecret,
+					Force:     options.Force,
+				})
+				if err != nil {
+					return err
+				}
 
-			result, err := services.login.Execute(command.Context(), authservice.LoginRequest{
-				APIKey:    credentials.APIKey,
-				APISecret: credentials.APISecret,
-				Force:     options.Force,
+				_, err = fmt.Fprintf(
+					command.OutOrStdout(),
+					"logged_in=true backend=%s api_key=%s saved_at=%s\n",
+					result.Backend,
+					result.APIKeyHint,
+					result.SavedAt,
+				)
+				return err
 			})
-			if err != nil {
-				return mapAuthError(err)
-			}
-
-			_, err = fmt.Fprintf(
-				command.OutOrStdout(),
-				"logged_in=true backend=%s api_key=%s saved_at=%s\n",
-				result.Backend,
-				result.APIKeyHint,
-				result.SavedAt,
-			)
-			return err
 		},
 	}
 

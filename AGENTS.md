@@ -11,6 +11,7 @@ Principles:
 - enforce quality gates before merge
 - keep docs and code synchronized
 - optimize for sustainability, not heroics
+- enforce DRY: avoid duplicated logic, validation rules, and output formatting paths
 
 ## Roles
 
@@ -218,6 +219,11 @@ Required implementation rules for day-to-day work:
   - add package comments for non-trivial packages
   - document exported behavior, invariants, side effects, and concurrency expectations
   - keep examples/docs synchronized with current CLI/API behavior
+- DRY enforcement:
+  - do not duplicate business logic across commands/services/adapters
+  - extract shared behavior into small helpers when the same pattern appears 2+ times
+  - keep one source of truth for validation and error mapping rules
+  - in reviews, treat avoidable duplication as a blocking issue unless explicitly justified
 
 ## Go Deep Knowledge (Official go.dev)
 
