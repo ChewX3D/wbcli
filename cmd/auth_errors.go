@@ -25,8 +25,6 @@ func mapAuthError(err error) error {
 		return errors.New("stdin credential payload exceeds maximum allowed size")
 	case errors.Is(err, clitools.ErrCredentialInputFormat):
 		return errors.New("stdin credential payload must contain exactly two non-empty lines: api_key then api_secret")
-	case errors.Is(err, authservice.ErrCredentialAlreadyExists):
-		return errors.New("credentials already exist; rerun with --force to overwrite")
 	case errors.Is(err, authservice.ErrNotLoggedIn):
 		return errors.New("not logged in; run wbcli auth login first")
 	case errors.Is(err, authservice.ErrAuthTestNotImplemented):

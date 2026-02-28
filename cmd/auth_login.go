@@ -9,19 +9,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type authLoginOptions struct {
-	Force bool
-}
-
 func newAuthLoginCmd() *cobra.Command {
-	options := &authLoginOptions{}
-
 	command := &cobra.Command{
-		Use:   "login",
-		Short: "Store credentials from stdin",
-		Long:  "Store API key and API secret in secure OS keychain backend using stdin-only input.",
-		Example: "printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login\n" +
-			"printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login --force",
+		Use:     "login",
+		Short:   "Store credentials from stdin",
+		Long:    "Store API key and API secret in secure OS keychain backend using stdin-only input.",
+		Example: "printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login",
 		RunE: func(command *cobra.Command, args []string) error {
 			if inputFile, ok := command.InOrStdin().(*os.File); ok && clitools.IsTerminalInput(inputFile) {
 				return mapAuthError(clitools.ErrCredentialInputMissing)
@@ -36,7 +29,6 @@ func newAuthLoginCmd() *cobra.Command {
 				result, err := services.login.Execute(command.Context(), authservice.LoginRequest{
 					APIKey:    credentials.APIKey,
 					APISecret: credentials.APISecret,
-					Force:     options.Force,
 				})
 				if err != nil {
 					return err
@@ -53,8 +45,6 @@ func newAuthLoginCmd() *cobra.Command {
 			})
 		},
 	}
-
-	command.Flags().BoolVar(&options.Force, "force", false, "overwrite existing credentials")
 
 	return command
 }

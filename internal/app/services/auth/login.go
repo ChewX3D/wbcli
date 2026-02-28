@@ -12,7 +12,6 @@ import (
 type LoginRequest struct {
 	APIKey    string
 	APISecret []byte
-	Force     bool
 }
 
 // LoginResult is safe output for auth login use-case.
@@ -48,14 +47,6 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 		return LoginResult{}, err
 	}
 	defer domainauth.WipeBytes(request.APISecret)
-
-	exists, err := service.credentialStore.Exists(ctx)
-	if err != nil {
-		return LoginResult{}, fmt.Errorf("check existing credential: %w", err)
-	}
-	if exists && !request.Force {
-		return LoginResult{}, ErrCredentialAlreadyExists
-	}
 
 	previous, found, err := service.sessionStore.GetSession(ctx)
 	if err != nil {

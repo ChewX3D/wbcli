@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -107,7 +106,7 @@ func TestLoginServiceExecuteSuccess(t *testing.T) {
 	}
 }
 
-func TestLoginServiceExecuteRejectsOverwriteWithoutForce(t *testing.T) {
+func TestLoginServiceExecuteOverwritesExistingCredential(t *testing.T) {
 	credentialStore := &fakeCredentialStore{
 		backendName: "os-keychain",
 		credential:  &domainauth.Credential{APIKey: "old", APISecret: []byte("old-secret")},
@@ -115,11 +114,20 @@ func TestLoginServiceExecuteRejectsOverwriteWithoutForce(t *testing.T) {
 	sessionStore := &fakeSessionStore{}
 	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()})
 
-	_, err := service.Execute(context.Background(), LoginRequest{
+	result, err := service.Execute(context.Background(), LoginRequest{
 		APIKey:    "new",
 		APISecret: []byte("new-secret"),
 	})
-	if !errors.Is(err, ErrCredentialAlreadyExists) {
-		t.Fatalf("expected ErrCredentialAlreadyExists, got %v", err)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.APIKeyHint == "" {
+		t.Fatalf("expected api key hint")
+	}
+	if credentialStore.credential == nil {
+		t.Fatalf("expected credential to be stored")
+	}
+	if credentialStore.credential.APIKey != "new" {
+		t.Fatalf("expected API key to be overwritten, got %q", credentialStore.credential.APIKey)
 	}
 }

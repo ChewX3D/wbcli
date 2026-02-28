@@ -65,7 +65,7 @@ Acceptance Criteria:
   - [x] config path remains `~/.wbcli/config.yaml` with `0600` on macOS/Linux.
 - [x] Command behavior:
   - [x] `auth login` writes credentials to secure store and sets logged-in session metadata.
-  - [x] `auth login --force` overwrites existing session credential.
+  - [x] `auth login` overwrites existing session credential by default.
   - [x] `auth logout` clears credential and session metadata; idempotent when already logged out.
   - [x] `auth test` keeps current scope and dependency on PROJ-2026-002.
 - [ ] Test and docs coverage:
@@ -76,8 +76,7 @@ Acceptance Criteria:
 Test Matrix:
 - [x] `auth login` valid stdin payload creates session.
 - [x] `auth login` invalid stdin payload fails with clear error.
-- [x] `auth login` without `--force` fails if already logged in.
-- [ ] `auth login --force` overwrites existing session.
+- [x] `auth login` overwrites existing session when already logged in.
 - [ ] `auth logout` succeeds when logged in.
 - [ ] `auth logout` succeeds (idempotent) when logged out.
 - [x] `auth status` reports logged-out state.
@@ -110,3 +109,4 @@ Status Notes:
 - 2026-02-28: Scoped as mandatory simplification to single-session auth (no profiles, no backward compatibility).
 - 2026-02-28: Marked as scope override for profile-related parts of PROJ-2026-001.
 - 2026-02-28: Implemented single-session auth architecture and command surface (`login/logout/status/test`), with profile flags and profile commands removed.
+- 2026-02-28: Removed `--force` from `auth login`; login now overwrites existing session by default.
