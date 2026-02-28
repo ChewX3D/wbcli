@@ -84,7 +84,7 @@ Test Matrix:
 - [ ] `auth status` reports logged-in safe metadata.
 - [ ] keychain unavailable/permission-denied paths return actionable errors.
 - [x] config assertions confirm metadata-only and `0600` permissions.
-- [ ] removed commands (`use/list/current`) return unknown command errors.
+- [x] removed commands (`use/list/current`) return unknown command errors.
 
 Risks:
 - profile-based user scripts break immediately due to command removal
