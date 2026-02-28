@@ -302,7 +302,8 @@ Required implementation rules for day-to-day work:
   - keep tests deterministic; avoid time-based flakiness
   - include coverage for success paths, error paths, and edge cases
 - Documentation:
-  - add package comments for non-trivial packages
+  - do not create `doc.go` files
+  - if package-level comments are needed, place them in regular source files (for example `types.go`, `service.go`, `client.go`)
   - document exported behavior, invariants, side effects, and concurrency expectations
   - keep examples/docs synchronized with current CLI/API behavior
 - DRY enforcement:
