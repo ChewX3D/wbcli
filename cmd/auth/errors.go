@@ -1,4 +1,4 @@
-package cmd
+package authcmd
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
-func mapAuthError(err error) error {
+func mapError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -33,11 +33,11 @@ func mapAuthError(err error) error {
 		return errors.New("os-keychain backend is unavailable on this system")
 	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
 		return errors.New("os-keychain access denied; unlock keychain/secret service and retry")
-	case errors.Is(err, ports.ErrAuthProbeUnauthorized):
+	case errors.Is(err, ports.ErrCredentialVerifyUnauthorized):
 		return errors.New("whitebit auth failed; check your public key and secret key")
-	case errors.Is(err, ports.ErrAuthProbeForbidden):
+	case errors.Is(err, ports.ErrCredentialVerifyForbidden):
 		return errors.New("whitebit auth succeeded but required permission is missing for collateral-account hedge-mode")
-	case errors.Is(err, ports.ErrAuthProbeUnavailable):
+	case errors.Is(err, ports.ErrCredentialVerifyUnavailable):
 		return errors.New("whitebit auth check is unavailable right now; retry later")
 	default:
 		return err

@@ -1,4 +1,4 @@
-package cmd
+package authcmd
 
 import (
 	"fmt"
@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAuthStatusCmd() *cobra.Command {
+func newStatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "status",
 		Short:   "Show current auth status",
 		Example: "wbcli auth status",
 		RunE: func(command *cobra.Command, args []string) error {
-			return runWithAuthServices(command, func(services *authServices) error {
-				result, err := services.status.Execute(command.Context())
+			return runWithServices(command, func(services *Services) error {
+				result, err := services.Status.Execute(command.Context())
 				if err != nil {
 					return err
 				}

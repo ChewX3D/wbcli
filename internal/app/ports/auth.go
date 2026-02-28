@@ -15,12 +15,12 @@ var (
 	ErrSecretStoreUnavailable = errors.New("secret store unavailable")
 	// ErrSecretStorePermissionDenied indicates denied backend access.
 	ErrSecretStorePermissionDenied = errors.New("secret store permission denied")
-	// ErrAuthProbeUnauthorized indicates rejected WhiteBIT credentials.
-	ErrAuthProbeUnauthorized = errors.New("auth probe unauthorized")
-	// ErrAuthProbeForbidden indicates missing endpoint permission for credential.
-	ErrAuthProbeForbidden = errors.New("auth probe forbidden")
-	// ErrAuthProbeUnavailable indicates temporary WhiteBIT or transport failure.
-	ErrAuthProbeUnavailable = errors.New("auth probe unavailable")
+	// ErrCredentialVerifyUnauthorized indicates rejected WhiteBIT credentials.
+	ErrCredentialVerifyUnauthorized = errors.New("credential verification unauthorized")
+	// ErrCredentialVerifyForbidden indicates missing endpoint permission for credential.
+	ErrCredentialVerifyForbidden = errors.New("credential verification forbidden")
+	// ErrCredentialVerifyUnavailable indicates temporary WhiteBIT or transport failure.
+	ErrCredentialVerifyUnavailable = errors.New("credential verification unavailable")
 )
 
 // SessionMetadata holds non-secret auth session information.
@@ -52,7 +52,7 @@ type Clock interface {
 	Now() time.Time
 }
 
-// AuthProbe verifies credential validity and required permission against WhiteBIT.
-type AuthProbe interface {
-	Probe(ctx context.Context, credential domainauth.Credential) error
+// CredentialVerifier verifies credential validity and required permission against WhiteBIT.
+type CredentialVerifier interface {
+	Verify(ctx context.Context, credential domainauth.Credential) error
 }

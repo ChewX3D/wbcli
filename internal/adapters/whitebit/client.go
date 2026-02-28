@@ -221,8 +221,8 @@ func signPayload(encodedPayload string, secret []byte) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// Probe verifies credential validity and collateral permission for auth login flow.
-func (client *Client) Probe(ctx context.Context, credential domainauth.Credential) error {
+// Verify checks credential validity and collateral permission for auth login flow.
+func (client *Client) Verify(ctx context.Context, credential domainauth.Credential) error {
 	_, err := client.GetCollateralAccountHedgeMode(ctx, credential)
 	if err == nil {
 		return nil
@@ -230,10 +230,10 @@ func (client *Client) Probe(ctx context.Context, credential domainauth.Credentia
 
 	switch {
 	case errors.Is(err, ErrUnauthorized):
-		return ports.ErrAuthProbeUnauthorized
+		return ports.ErrCredentialVerifyUnauthorized
 	case errors.Is(err, ErrForbidden):
-		return ports.ErrAuthProbeForbidden
+		return ports.ErrCredentialVerifyForbidden
 	default:
-		return ports.ErrAuthProbeUnavailable
+		return ports.ErrCredentialVerifyUnavailable
 	}
 }

@@ -105,7 +105,7 @@ func TestClientStatusErrorMapping(t *testing.T) {
 	}
 }
 
-func TestClientProbeMapsErrorsForAuthLogin(t *testing.T) {
+func TestClientVerifyMapsErrorsForAuthLogin(t *testing.T) {
 	testCases := []struct {
 		name        string
 		statusCode  int
@@ -114,17 +114,17 @@ func TestClientProbeMapsErrorsForAuthLogin(t *testing.T) {
 		{
 			name:        "unauthorized",
 			statusCode:  http.StatusUnauthorized,
-			expectedErr: ports.ErrAuthProbeUnauthorized,
+			expectedErr: ports.ErrCredentialVerifyUnauthorized,
 		},
 		{
 			name:        "forbidden",
 			statusCode:  http.StatusForbidden,
-			expectedErr: ports.ErrAuthProbeForbidden,
+			expectedErr: ports.ErrCredentialVerifyForbidden,
 		},
 		{
 			name:        "unavailable",
 			statusCode:  http.StatusServiceUnavailable,
-			expectedErr: ports.ErrAuthProbeUnavailable,
+			expectedErr: ports.ErrCredentialVerifyUnavailable,
 		},
 	}
 
@@ -136,7 +136,7 @@ func TestClientProbeMapsErrorsForAuthLogin(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL, server.Client(), fixedNonceSource{value: 1})
-			err := client.Probe(context.Background(), domainauth.Credential{
+			err := client.Verify(context.Background(), domainauth.Credential{
 				APIKey:    "public-key",
 				APISecret: []byte("secret-key"),
 			})

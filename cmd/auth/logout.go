@@ -1,4 +1,4 @@
-package cmd
+package authcmd
 
 import (
 	"fmt"
@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAuthLogoutCmd() *cobra.Command {
+func newLogoutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "logout",
 		Short:   "Remove stored credentials",
 		Example: "wbcli auth logout",
 		RunE: func(command *cobra.Command, args []string) error {
-			return runWithAuthServices(command, func(services *authServices) error {
-				if _, err := services.logout.Execute(command.Context()); err != nil {
+			return runWithServices(command, func(services *Services) error {
+				if _, err := services.Logout.Execute(command.Context()); err != nil {
 					return err
 				}
 

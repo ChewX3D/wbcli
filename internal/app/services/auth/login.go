@@ -23,10 +23,10 @@ type LoginResult struct {
 
 // LoginService stores credentials securely for single-session auth.
 type LoginService struct {
-	credentialStore ports.CredentialStore
-	sessionStore    ports.SessionStore
-	clock           ports.Clock
-	authProbe       ports.AuthProbe
+	credentialStore    ports.CredentialStore
+	sessionStore       ports.SessionStore
+	clock              ports.Clock
+	credentialVerifier ports.CredentialVerifier
 }
 
 // NewLoginService constructs LoginService.
@@ -34,13 +34,13 @@ func NewLoginService(
 	credentialStore ports.CredentialStore,
 	sessionStore ports.SessionStore,
 	clock ports.Clock,
-	authProbe ports.AuthProbe,
+	credentialVerifier ports.CredentialVerifier,
 ) *LoginService {
 	return &LoginService{
-		credentialStore: credentialStore,
-		sessionStore:    sessionStore,
-		clock:           clock,
-		authProbe:       authProbe,
+		credentialStore:    credentialStore,
+		sessionStore:       sessionStore,
+		clock:              clock,
+		credentialVerifier: credentialVerifier,
 	}
 }
 
@@ -55,10 +55,10 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 	}
 	defer domainauth.WipeBytes(request.APISecret)
 
-	if service.authProbe == nil {
-		return LoginResult{}, ports.ErrAuthProbeUnavailable
+	if service.credentialVerifier == nil {
+		return LoginResult{}, ports.ErrCredentialVerifyUnavailable
 	}
-	if err := service.authProbe.Probe(ctx, credential); err != nil {
+	if err := service.credentialVerifier.Verify(ctx, credential); err != nil {
 		return LoginResult{}, fmt.Errorf("probe credential: %w", err)
 	}
 

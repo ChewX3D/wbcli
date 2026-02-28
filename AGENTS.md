@@ -536,7 +536,7 @@ What goes where:
   - may depend on `internal/domain` and `internal/app/ports` only
 - `internal/app/ports/`
   - boundary interfaces for side effects needed by services
-  - examples: `CredentialStore`, `ProfileStore`, `AuthProbe`, `Clock`
+  - examples: `CredentialStore`, `SessionStore`, `CredentialVerifier`, `Clock`
   - keep interfaces small and behavior-focused
 - `internal/adapters/`
   - concrete implementations of ports (exchange, secret store, persistence, etc.)
@@ -559,7 +559,7 @@ What goes where:
 Feature-oriented example for auth:
 
 ```text
-cmd/auth_login.go
+cmd/auth/login.go
 internal/domain/auth/credential.go
 internal/app/services/auth/login.go
 internal/app/ports/auth.go

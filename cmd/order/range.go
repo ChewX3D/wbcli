@@ -1,4 +1,4 @@
-package cmd
+package ordercmd
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type orderRangeOptions struct {
-	orderBaseOptions
+type rangeOptions struct {
+	baseOptions
 	StartPrice      float64
 	EndPrice        float64
 	Step            float64
@@ -22,14 +22,14 @@ type orderRangeOptions struct {
 	Confirm         bool
 }
 
-func newOrderRangeCmd() *cobra.Command {
-	options := &orderRangeOptions{}
+func newRangeCmd() *cobra.Command {
+	options := &rangeOptions{}
 
 	command := &cobra.Command{
 		Use:   "range",
 		Short: "Build or submit a range order plan",
 		RunE: func(command *cobra.Command, args []string) error {
-			if err := validateOrderBase(options.orderBaseOptions); err != nil {
+			if err := validateBase(options.baseOptions); err != nil {
 				return err
 			}
 			if options.StartPrice <= 0 {
@@ -48,12 +48,25 @@ func newOrderRangeCmd() *cobra.Command {
 				return err
 			}
 
-			_, err := fmt.Fprintf(command.OutOrStdout(), "wbcli order range is not implemented yet (profile=%s market=%s side=%s start=%g end=%g step=%g amount-mode=%s base-amount=%g dry-run=%t confirm=%t)\n", options.Profile, options.Market, options.Side, options.StartPrice, options.EndPrice, options.Step, options.AmountMode, options.BaseAmount, options.DryRun, options.Confirm)
+			_, err := fmt.Fprintf(
+				command.OutOrStdout(),
+				"wbcli order range is not implemented yet (profile=%s market=%s side=%s start=%g end=%g step=%g amount-mode=%s base-amount=%g dry-run=%t confirm=%t)\n",
+				options.Profile,
+				options.Market,
+				options.Side,
+				options.StartPrice,
+				options.EndPrice,
+				options.Step,
+				options.AmountMode,
+				options.BaseAmount,
+				options.DryRun,
+				options.Confirm,
+			)
 			return err
 		},
 	}
 
-	addOrderBaseFlags(command, &options.orderBaseOptions)
+	addBaseFlags(command, &options.baseOptions)
 	command.Flags().Float64Var(&options.StartPrice, "start-price", 0, "range start price")
 	command.Flags().Float64Var(&options.EndPrice, "end-price", 0, "range end price")
 	command.Flags().Float64Var(&options.Step, "step", 0, "price step")

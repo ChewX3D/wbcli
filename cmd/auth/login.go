@@ -1,4 +1,4 @@
-package cmd
+package authcmd
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAuthLoginCmd() *cobra.Command {
+func newLoginCmd() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "login",
 		Short: "Validate and store credentials from stdin",
@@ -25,16 +25,16 @@ func newAuthLoginCmd() *cobra.Command {
   cat /tmp/wbcli-auth.txt | wbcli auth login`,
 		RunE: func(command *cobra.Command, args []string) error {
 			if inputFile, ok := command.InOrStdin().(*os.File); ok && clitools.IsTerminalInput(inputFile) {
-				return mapAuthError(clitools.ErrCredentialInputMissing)
+				return mapError(clitools.ErrCredentialInputMissing)
 			}
 
 			credentials, err := clitools.ReadCredentialPairFromReader(command.InOrStdin(), 16*1024)
 			if err != nil {
-				return mapAuthError(err)
+				return mapError(err)
 			}
 
-			return runWithAuthServices(command, func(services *authServices) error {
-				result, err := services.login.Execute(command.Context(), authservice.LoginRequest{
+			return runWithServices(command, func(services *Services) error {
+				result, err := services.Login.Execute(command.Context(), authservice.LoginRequest{
 					APIKey:    credentials.APIKey,
 					APISecret: credentials.APISecret,
 				})

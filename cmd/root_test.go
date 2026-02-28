@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	authcmd "github.com/ChewX3D/wbcli/cmd/auth"
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
@@ -210,9 +211,9 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 		backendName: "os-keychain",
 	}
 	sessionStore := &testSessionStore{}
-	authProbe := &testAuthProbe{err: ports.ErrAuthProbeUnauthorized}
+	credentialVerifier := &testCredentialVerifier{err: ports.ErrCredentialVerifyUnauthorized}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, authProbe))
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
 
 	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
@@ -283,48 +284,42 @@ func TestOrderRangeStub(t *testing.T) {
 	}
 }
 
-func withAuthServicesFactory(t *testing.T, services *authServices) {
+func withAuthServicesFactory(t *testing.T, services *authcmd.Services) {
 	t.Helper()
 
-	previousFactory := authServicesFactory
-	authServicesFactory = func() (*authServices, error) {
+	restore := authcmd.SetServicesFactoryForTest(func() (*authcmd.Services, error) {
 		return services, nil
-	}
-	t.Cleanup(func() {
-		authServicesFactory = previousFactory
 	})
+	t.Cleanup(restore)
 }
 
 func withAuthServicesFactoryError(t *testing.T, factoryErr error) {
 	t.Helper()
 
-	previousFactory := authServicesFactory
-	authServicesFactory = func() (*authServices, error) {
+	restore := authcmd.SetServicesFactoryForTest(func() (*authcmd.Services, error) {
 		return nil, factoryErr
-	}
-	t.Cleanup(func() {
-		authServicesFactory = previousFactory
 	})
+	t.Cleanup(restore)
 }
 
 func testAuthServices(
 	credentialStore ports.CredentialStore,
 	sessionStore ports.SessionStore,
-	authProbe ports.AuthProbe,
-) *authServices {
-	if authProbe == nil {
-		authProbe = &testAuthProbe{}
+	credentialVerifier ports.CredentialVerifier,
+) *authcmd.Services {
+	if credentialVerifier == nil {
+		credentialVerifier = &testCredentialVerifier{}
 	}
 
-	return &authServices{
-		login: authservice.NewLoginService(
+	return &authcmd.Services{
+		Login: authservice.NewLoginService(
 			credentialStore,
 			sessionStore,
 			testClock{now: time.Date(2026, 2, 28, 12, 0, 0, 0, time.UTC)},
-			authProbe,
+			credentialVerifier,
 		),
-		logout: authservice.NewLogoutService(credentialStore, sessionStore),
-		status: authservice.NewStatusService(sessionStore),
+		Logout: authservice.NewLogoutService(credentialStore, sessionStore),
+		Status: authservice.NewStatusService(sessionStore),
 	}
 }
 
@@ -433,10 +428,10 @@ func (clock testClock) Now() time.Time {
 	return clock.now
 }
 
-type testAuthProbe struct {
+type testCredentialVerifier struct {
 	err error
 }
 
-func (probe *testAuthProbe) Probe(_ context.Context, _ domainauth.Credential) error {
-	return probe.err
+func (verifier *testCredentialVerifier) Verify(_ context.Context, _ domainauth.Credential) error {
+	return verifier.err
 }

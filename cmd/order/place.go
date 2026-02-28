@@ -1,4 +1,4 @@
-package cmd
+package ordercmd
 
 import (
 	"errors"
@@ -8,22 +8,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type orderPlaceOptions struct {
-	orderBaseOptions
+type placeOptions struct {
+	baseOptions
 	Amount        float64
 	Price         float64
 	Expiration    int64
 	ClientOrderID string
 }
 
-func newOrderPlaceCmd() *cobra.Command {
-	options := &orderPlaceOptions{}
+func newPlaceCmd() *cobra.Command {
+	options := &placeOptions{}
 
 	command := &cobra.Command{
 		Use:   "place",
 		Short: "Place a single collateral limit order",
 		RunE: func(command *cobra.Command, args []string) error {
-			if err := validateOrderBase(options.orderBaseOptions); err != nil {
+			if err := validateBase(options.baseOptions); err != nil {
 				return err
 			}
 			if options.Amount <= 0 {
@@ -36,12 +36,22 @@ func newOrderPlaceCmd() *cobra.Command {
 				return errors.New("--expiration must be greater than or equal to 0")
 			}
 
-			_, err := fmt.Fprintf(command.OutOrStdout(), "wbcli order place is not implemented yet (profile=%s market=%s side=%s amount=%g price=%g expiration=%d client-order-id=%s)\n", options.Profile, options.Market, options.Side, options.Amount, options.Price, options.Expiration, options.ClientOrderID)
+			_, err := fmt.Fprintf(
+				command.OutOrStdout(),
+				"wbcli order place is not implemented yet (profile=%s market=%s side=%s amount=%g price=%g expiration=%d client-order-id=%s)\n",
+				options.Profile,
+				options.Market,
+				options.Side,
+				options.Amount,
+				options.Price,
+				options.Expiration,
+				options.ClientOrderID,
+			)
 			return err
 		},
 	}
 
-	addOrderBaseFlags(command, &options.orderBaseOptions)
+	addBaseFlags(command, &options.baseOptions)
 	command.Flags().Float64Var(&options.Amount, "amount", 0, "order amount")
 	command.Flags().Float64Var(&options.Price, "price", 0, "limit price")
 	command.Flags().Int64Var(&options.Expiration, "expiration", 0, "order expiration")
@@ -50,7 +60,7 @@ func newOrderPlaceCmd() *cobra.Command {
 	return command
 }
 
-func validateOrderBase(options orderBaseOptions) error {
+func validateBase(options baseOptions) error {
 	if options.Market == "" {
 		return errors.New("--market is required")
 	}
