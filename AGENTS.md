@@ -116,6 +116,18 @@ Storage/security boundaries:
 - config permission target on macOS/Linux: `0600`
 - command outputs/errors must not leak API secret, payload, or signature values
 
+### WhiteBIT Transport Client
+
+Current adapter behavior (`internal/adapters/whitebit`):
+
+- one shared signed private client is the source of truth for WhiteBIT HTTP calls
+- implemented private endpoints:
+  - `POST /api/v4/collateral-account/hedge-mode`
+  - `POST /api/v4/order/collateral/limit`
+  - `POST /api/v4/order/collateral/bulk`
+- auth login uses this shared client (hedge-mode endpoint) instead of a dedicated probe-only client
+- request signing is centralized and reused for all private calls (`X-TXC-APIKEY`, `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`)
+
 ## Backlog And Todo Workflow
 
 ### Triage
@@ -372,6 +384,11 @@ Mandatory engineering rules derived from these docs:
 - Version-awareness:
   - verify behavior against the targeted Go release notes when upgrading Go version
   - when adopting new toolchain/runtime features, record minimum Go version constraints explicitly
+- External API enum contract (MANDATORY):
+  - when official API docs define a finite set of values, model them as typed enum-like constants in Go
+  - validate enum values before HTTP request execution
+  - do not use ad-hoc raw string literals at call sites for documented enum fields
+  - keep enum names and values synchronized with official API docs when endpoints change
 
 ## Architecture Standard (Hexagonal / Ports And Adapters)
 

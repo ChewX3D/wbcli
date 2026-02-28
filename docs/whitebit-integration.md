@@ -9,8 +9,8 @@ Source references:
 ## Relevant Endpoints
 
 - `POST /api/v4/collateral-account/hedge-mode` (auth connectivity probe during `wbcli auth login`)
-- `POST /api/v4/collateral-limit-order`
-- `POST /api/v4/collateral-bulk-limit-order` (for batch/range placement)
+- `POST /api/v4/order/collateral/limit`
+- `POST /api/v4/order/collateral/bulk` (for batch/range placement)
 
 ## Collateral Limit Order Request Fields
 
@@ -44,7 +44,7 @@ WhiteBIT private requests use headers:
 
 Payload should include:
 
-- `request`: endpoint path (for example `/api/v4/collateral-limit-order`)
+- `request`: endpoint path (for example `/api/v4/order/collateral/limit`)
 - `nonce`: increasing numeric value
 - `nonceWindow`: optional boolean for tolerant nonce validation
 - request body fields (market, side, amount, etc.)
@@ -55,6 +55,7 @@ Implementation rule:
 - base64 encode payload
 - sign encoded payload with HMAC-SHA512(secret)
 - send payload fields as JSON body and include headers above
+- for documented finite-value fields, use typed enums in code instead of raw strings (examples: `side` = `buy|sell`, `positionSide` = `long|short`)
 
 ## Credential Handling Rules (CLI Side)
 
