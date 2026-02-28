@@ -34,6 +34,30 @@ normalize_status() {
   esac
 }
 
+set_ticket_field() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local tmp_file
+
+  tmp_file="$(mktemp)"
+  awk -v field_key="$key" -v field_value="$value" '
+    BEGIN { replaced = 0 }
+    $0 ~ ("^" field_key ":") {
+      print field_key ": " field_value
+      replaced = 1
+      next
+    }
+    { print }
+    END {
+      if (!replaced) {
+        print field_key ": " field_value
+      }
+    }
+  ' "$file" > "$tmp_file"
+  mv "$tmp_file" "$file"
+}
+
 if [[ $# -lt 2 ]]; then
   usage
   exit 1
@@ -64,17 +88,8 @@ fi
 
 today="$(date +%F)"
 
-if grep -q '^Status:' "$target_file"; then
-  sed -i -E "s/^Status:.*/Status: ${target_label}/" "$target_file"
-else
-  printf '\nStatus: %s\n' "$target_label" >> "$target_file"
-fi
-
-if grep -q '^Updated:' "$target_file"; then
-  sed -i -E "s/^Updated:.*/Updated: ${today}/" "$target_file"
-else
-  printf 'Updated: %s\n' "$today" >> "$target_file"
-fi
+set_ticket_field "$target_file" "Status" "$target_label"
+set_ticket_field "$target_file" "Updated" "$today"
 
 if ! grep -q '^Status Notes:' "$target_file"; then
   printf '\nStatus Notes:\n' >> "$target_file"

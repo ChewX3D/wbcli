@@ -24,7 +24,9 @@ print_status_section() {
   local file
 
   echo "## ${label}"
-  mapfile -t files < <(find "$TICKETS_DIR/$dir" -maxdepth 1 -type f -name '*.md' | sort)
+  while IFS= read -r file; do
+    files+=("$file")
+  done < <(find "$TICKETS_DIR/$dir" -maxdepth 1 -type f -name '*.md' | sort)
 
   if [[ "${#files[@]}" -eq 0 ]]; then
     echo "- _(empty)_"
