@@ -3,11 +3,11 @@
 ID: PROJ-2026-006
 Title: Add profile config store for non-secret CLI metadata
 Priority: P1
-Status: Ready
+Status: Archived
 Owner: chewbaccalol
 Due Date: 2026-03-01
 Created: 2026-02-26
-Updated: 2026-02-26
+Updated: 2026-02-28
 Links: [CLI Design](../../docs/cli-design.md)
 
 Problem:
@@ -39,3 +39,4 @@ Rollback Plan:
 Status Notes:
 - 2026-02-26: Created in Ready.
 - 2026-02-26: Sequenced after PROJ-2026-005 as part of Phase 0 minimal setup.
+- 2026-02-28: Canceled by requester.
