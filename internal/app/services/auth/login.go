@@ -10,7 +10,6 @@ import (
 
 // LoginRequest is input for auth login use-case.
 type LoginRequest struct {
-	Profile   string
 	APIKey    string
 	APISecret []byte
 	Force     bool
@@ -18,34 +17,29 @@ type LoginRequest struct {
 
 // LoginResult is safe output for auth login use-case.
 type LoginResult struct {
-	Profile    string
 	Backend    string
 	APIKeyHint string
 	SavedAt    string
 }
 
-// LoginService stores profile credentials securely.
+// LoginService stores credentials securely for single-session auth.
 type LoginService struct {
 	credentialStore ports.CredentialStore
-	profileStore    ports.ProfileStore
+	sessionStore    ports.SessionStore
 	clock           ports.Clock
 }
 
 // NewLoginService constructs LoginService.
-func NewLoginService(credentialStore ports.CredentialStore, profileStore ports.ProfileStore, clock ports.Clock) *LoginService {
+func NewLoginService(credentialStore ports.CredentialStore, sessionStore ports.SessionStore, clock ports.Clock) *LoginService {
 	return &LoginService{
 		credentialStore: credentialStore,
-		profileStore:    profileStore,
+		sessionStore:    sessionStore,
 		clock:           clock,
 	}
 }
 
-// Execute validates login input and writes auth material into stores.
+// Execute validates input and writes auth material into stores.
 func (service *LoginService) Execute(ctx context.Context, request LoginRequest) (LoginResult, error) {
-	if err := domainauth.ValidateProfileName(request.Profile); err != nil {
-		return LoginResult{}, err
-	}
-
 	credential := domainauth.Credential{
 		APIKey:    request.APIKey,
 		APISecret: request.APISecret,
@@ -55,7 +49,7 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 	}
 	defer domainauth.WipeBytes(request.APISecret)
 
-	exists, err := service.credentialStore.Exists(ctx, request.Profile)
+	exists, err := service.credentialStore.Exists(ctx)
 	if err != nil {
 		return LoginResult{}, fmt.Errorf("check existing credential: %w", err)
 	}
@@ -63,37 +57,32 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 		return LoginResult{}, ErrCredentialAlreadyExists
 	}
 
-	previous, found, err := service.profileStore.GetProfile(ctx, request.Profile)
+	previous, found, err := service.sessionStore.GetSession(ctx)
 	if err != nil {
-		return LoginResult{}, fmt.Errorf("read profile metadata: %w", err)
+		return LoginResult{}, fmt.Errorf("read session metadata: %w", err)
 	}
 
 	now := service.clock.Now().UTC()
-	metadata := ports.ProfileMetadata{
-		Name:       request.Profile,
+	session := ports.SessionMetadata{
 		Backend:    service.credentialStore.BackendName(),
 		APIKeyHint: domainauth.APIKeyHint(request.APIKey),
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
 	if found {
-		metadata.CreatedAt = previous.CreatedAt
+		session.CreatedAt = previous.CreatedAt
 	}
 
-	if err := service.credentialStore.Save(ctx, request.Profile, credential); err != nil {
+	if err := service.credentialStore.Save(ctx, credential); err != nil {
 		return LoginResult{}, fmt.Errorf("save credential: %w", err)
 	}
-	if err := service.profileStore.UpsertProfile(ctx, metadata); err != nil {
-		return LoginResult{}, fmt.Errorf("save profile metadata: %w", err)
-	}
-	if err := service.profileStore.SetActiveProfile(ctx, request.Profile); err != nil {
-		return LoginResult{}, fmt.Errorf("set active profile: %w", err)
+	if err := service.sessionStore.SaveSession(ctx, session); err != nil {
+		return LoginResult{}, fmt.Errorf("save session metadata: %w", err)
 	}
 
 	return LoginResult{
-		Profile:    request.Profile,
-		Backend:    metadata.Backend,
-		APIKeyHint: metadata.APIKeyHint,
+		Backend:    session.Backend,
+		APIKeyHint: session.APIKeyHint,
 		SavedAt:    now.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }

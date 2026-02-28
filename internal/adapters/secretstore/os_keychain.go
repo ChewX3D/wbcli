@@ -13,7 +13,10 @@ import (
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
-const serviceName = "wbcli"
+const (
+	serviceName   = "wbcli"
+	credentialKey = "default"
+)
 
 // OSKeychainStore stores credentials in platform keychain tools.
 type OSKeychainStore struct{}
@@ -28,8 +31,8 @@ func (store *OSKeychainStore) BackendName() string {
 	return "os-keychain"
 }
 
-// Save writes profile credential to OS keychain.
-func (store *OSKeychainStore) Save(ctx context.Context, profile string, credential domainauth.Credential) error {
+// Save writes single credential to OS keychain.
+func (store *OSKeychainStore) Save(ctx context.Context, credential domainauth.Credential) error {
 	payload, err := marshalCredential(credential)
 	if err != nil {
 		return fmt.Errorf("marshal credential payload: %w", err)
@@ -37,16 +40,16 @@ func (store *OSKeychainStore) Save(ctx context.Context, profile string, credenti
 
 	switch runtime.GOOS {
 	case "darwin":
-		return saveDarwin(ctx, profile, payload)
+		return saveDarwin(ctx, payload)
 	case "linux":
-		return saveLinux(ctx, profile, payload)
+		return saveLinux(ctx, payload)
 	default:
 		return ports.ErrSecretStoreUnavailable
 	}
 }
 
-// Load reads profile credential from OS keychain.
-func (store *OSKeychainStore) Load(ctx context.Context, profile string) (domainauth.Credential, error) {
+// Load reads single credential from OS keychain.
+func (store *OSKeychainStore) Load(ctx context.Context) (domainauth.Credential, error) {
 	var (
 		payload string
 		err     error
@@ -54,9 +57,9 @@ func (store *OSKeychainStore) Load(ctx context.Context, profile string) (domaina
 
 	switch runtime.GOOS {
 	case "darwin":
-		payload, err = loadDarwin(ctx, profile)
+		payload, err = loadDarwin(ctx)
 	case "linux":
-		payload, err = loadLinux(ctx, profile)
+		payload, err = loadLinux(ctx)
 	default:
 		return domainauth.Credential{}, ports.ErrSecretStoreUnavailable
 	}
@@ -72,9 +75,9 @@ func (store *OSKeychainStore) Load(ctx context.Context, profile string) (domaina
 	return credential, nil
 }
 
-// Exists checks whether profile credentials exist.
-func (store *OSKeychainStore) Exists(ctx context.Context, profile string) (bool, error) {
-	_, err := store.Load(ctx, profile)
+// Exists checks whether credentials exist.
+func (store *OSKeychainStore) Exists(ctx context.Context) (bool, error) {
+	_, err := store.Load(ctx)
 	if err == nil {
 		return true, nil
 	}
@@ -85,13 +88,13 @@ func (store *OSKeychainStore) Exists(ctx context.Context, profile string) (bool,
 	return false, err
 }
 
-// Delete removes profile credential from OS keychain.
-func (store *OSKeychainStore) Delete(ctx context.Context, profile string) error {
+// Delete removes single credential from OS keychain.
+func (store *OSKeychainStore) Delete(ctx context.Context) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return deleteDarwin(ctx, profile)
+		return deleteDarwin(ctx)
 	case "linux":
-		return deleteLinux(ctx, profile)
+		return deleteLinux(ctx)
 	default:
 		return ports.ErrSecretStoreUnavailable
 	}
@@ -126,14 +129,14 @@ func unmarshalCredential(payload string) (domainauth.Credential, error) {
 	}, nil
 }
 
-func saveDarwin(ctx context.Context, profile string, payload string) error {
+func saveDarwin(ctx context.Context, payload string) error {
 	if _, err := exec.LookPath("security"); err != nil {
 		return ports.ErrSecretStoreUnavailable
 	}
 
 	output, err := runCommand(ctx, "", "security",
 		"add-generic-password",
-		"-a", profile,
+		"-a", credentialKey,
 		"-s", serviceName,
 		"-w", payload,
 		"-U",
@@ -145,14 +148,14 @@ func saveDarwin(ctx context.Context, profile string, payload string) error {
 	return nil
 }
 
-func loadDarwin(ctx context.Context, profile string) (string, error) {
+func loadDarwin(ctx context.Context) (string, error) {
 	if _, err := exec.LookPath("security"); err != nil {
 		return "", ports.ErrSecretStoreUnavailable
 	}
 
 	output, err := runCommand(ctx, "", "security",
 		"find-generic-password",
-		"-a", profile,
+		"-a", credentialKey,
 		"-s", serviceName,
 		"-w",
 	)
@@ -163,14 +166,14 @@ func loadDarwin(ctx context.Context, profile string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func deleteDarwin(ctx context.Context, profile string) error {
+func deleteDarwin(ctx context.Context) error {
 	if _, err := exec.LookPath("security"); err != nil {
 		return ports.ErrSecretStoreUnavailable
 	}
 
 	output, err := runCommand(ctx, "", "security",
 		"delete-generic-password",
-		"-a", profile,
+		"-a", credentialKey,
 		"-s", serviceName,
 	)
 	if err != nil {
@@ -185,16 +188,16 @@ func deleteDarwin(ctx context.Context, profile string) error {
 	return nil
 }
 
-func saveLinux(ctx context.Context, profile string, payload string) error {
+func saveLinux(ctx context.Context, payload string) error {
 	if _, err := exec.LookPath("secret-tool"); err != nil {
 		return ports.ErrSecretStoreUnavailable
 	}
 
 	output, err := runCommand(ctx, payload, "secret-tool",
 		"store",
-		"--label=wbcli "+profile,
+		"--label=wbcli",
 		"service", serviceName,
-		"profile", profile,
+		"account", credentialKey,
 	)
 	if err != nil {
 		return mapCommandError(err, output)
@@ -203,7 +206,7 @@ func saveLinux(ctx context.Context, profile string, payload string) error {
 	return nil
 }
 
-func loadLinux(ctx context.Context, profile string) (string, error) {
+func loadLinux(ctx context.Context) (string, error) {
 	if _, err := exec.LookPath("secret-tool"); err != nil {
 		return "", ports.ErrSecretStoreUnavailable
 	}
@@ -211,7 +214,7 @@ func loadLinux(ctx context.Context, profile string) (string, error) {
 	output, err := runCommand(ctx, "", "secret-tool",
 		"lookup",
 		"service", serviceName,
-		"profile", profile,
+		"account", credentialKey,
 	)
 	if err != nil {
 		return "", mapCommandError(err, output)
@@ -225,7 +228,7 @@ func loadLinux(ctx context.Context, profile string) (string, error) {
 	return trimmed, nil
 }
 
-func deleteLinux(ctx context.Context, profile string) error {
+func deleteLinux(ctx context.Context) error {
 	if _, err := exec.LookPath("secret-tool"); err != nil {
 		return ports.ErrSecretStoreUnavailable
 	}
@@ -233,7 +236,7 @@ func deleteLinux(ctx context.Context, profile string) error {
 	output, err := runCommand(ctx, "", "secret-tool",
 		"clear",
 		"service", serviceName,
-		"profile", profile,
+		"account", credentialKey,
 	)
 	if err != nil {
 		mappedErr := mapCommandError(err, output)

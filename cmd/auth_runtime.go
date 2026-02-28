@@ -9,31 +9,27 @@ import (
 )
 
 type authServices struct {
-	login   *authservice.LoginService
-	use     *authservice.UseService
-	list    *authservice.ListService
-	logout  *authservice.LogoutService
-	current *authservice.CurrentService
-	test    *authservice.TestService
+	login  *authservice.LoginService
+	logout *authservice.LogoutService
+	status *authservice.StatusService
+	test   *authservice.TestService
 }
 
 var authServicesFactory = defaultAuthServicesFactory
 
 func defaultAuthServicesFactory() (*authServices, error) {
-	profileStore, err := configstore.NewDefaultProfileStore()
+	sessionStore, err := configstore.NewDefaultSessionStore()
 	if err != nil {
-		return nil, fmt.Errorf("init profile store: %w", err)
+		return nil, fmt.Errorf("init session store: %w", err)
 	}
 
 	credentialStore := secretstore.NewOSKeychainStore()
 	clock := authservice.SystemClock{}
 
 	return &authServices{
-		login:   authservice.NewLoginService(credentialStore, profileStore, clock),
-		use:     authservice.NewUseService(credentialStore, profileStore, clock),
-		list:    authservice.NewListService(profileStore),
-		logout:  authservice.NewLogoutService(credentialStore, profileStore),
-		current: authservice.NewCurrentService(profileStore),
-		test:    authservice.NewTestService(credentialStore, profileStore, nil),
+		login:  authservice.NewLoginService(credentialStore, sessionStore, clock),
+		logout: authservice.NewLogoutService(credentialStore, sessionStore),
+		status: authservice.NewStatusService(sessionStore),
+		test:   authservice.NewTestService(credentialStore, nil),
 	}, nil
 }

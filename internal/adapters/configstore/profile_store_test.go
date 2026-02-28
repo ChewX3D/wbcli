@@ -11,22 +11,18 @@ import (
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 )
 
-func TestFileProfileStoreWritesMetadataOnlyWith0600Permissions(t *testing.T) {
+func TestFileSessionStoreWritesMetadataOnlyWith0600Permissions(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	store := NewFileProfileStore(configPath)
+	store := NewFileSessionStore(configPath)
 
 	now := time.Date(2026, 2, 26, 12, 0, 0, 0, time.UTC)
-	err := store.UpsertProfile(context.Background(), ports.ProfileMetadata{
-		Name:       "prod",
+	err := store.SaveSession(context.Background(), ports.SessionMetadata{
 		Backend:    "os-keychain",
 		APIKeyHint: "ab***yz",
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	})
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if err := store.SetActiveProfile(context.Background(), "prod"); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
@@ -47,11 +43,14 @@ func TestFileProfileStoreWritesMetadataOnlyWith0600Permissions(t *testing.T) {
 		t.Fatalf("expected config mode 0600, got %o", fileInfo.Mode().Perm())
 	}
 
-	activeProfile, err := store.GetActiveProfile(context.Background())
+	session, found, err := store.GetSession(context.Background())
 	if err != nil {
-		t.Fatalf("get active profile: %v", err)
+		t.Fatalf("get session: %v", err)
 	}
-	if activeProfile != "prod" {
-		t.Fatalf("expected active profile prod, got %q", activeProfile)
+	if !found {
+		t.Fatalf("expected session to exist")
+	}
+	if session.Backend != "os-keychain" {
+		t.Fatalf("expected backend os-keychain, got %q", session.Backend)
 	}
 }

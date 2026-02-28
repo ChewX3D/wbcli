@@ -10,8 +10,7 @@ import (
 )
 
 type authLoginOptions struct {
-	Profile string
-	Force   bool
+	Force bool
 }
 
 func newAuthLoginCmd() *cobra.Command {
@@ -19,10 +18,10 @@ func newAuthLoginCmd() *cobra.Command {
 
 	command := &cobra.Command{
 		Use:   "login",
-		Short: "Store credentials for a profile from stdin",
+		Short: "Store credentials from stdin",
 		Long:  "Store API key and API secret in secure OS keychain backend using stdin-only input.",
-		Example: "printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login --profile prod\n" +
-			"printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login --profile ci --force",
+		Example: "printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login\n" +
+			"printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login --force",
 		RunE: func(command *cobra.Command, args []string) error {
 			if inputFile, ok := command.InOrStdin().(*os.File); ok && clitools.IsTerminalInput(inputFile) {
 				return mapAuthError(clitools.ErrCredentialInputMissing)
@@ -39,7 +38,6 @@ func newAuthLoginCmd() *cobra.Command {
 			}
 
 			result, err := services.login.Execute(command.Context(), authservice.LoginRequest{
-				Profile:   options.Profile,
 				APIKey:    credentials.APIKey,
 				APISecret: credentials.APISecret,
 				Force:     options.Force,
@@ -50,8 +48,7 @@ func newAuthLoginCmd() *cobra.Command {
 
 			_, err = fmt.Fprintf(
 				command.OutOrStdout(),
-				"profile=%s backend=%s api_key=%s saved_at=%s\n",
-				result.Profile,
+				"logged_in=true backend=%s api_key=%s saved_at=%s\n",
 				result.Backend,
 				result.APIKeyHint,
 				result.SavedAt,
@@ -60,9 +57,7 @@ func newAuthLoginCmd() *cobra.Command {
 		},
 	}
 
-	command.Flags().StringVar(&options.Profile, "profile", "", "credential profile name")
-	command.Flags().BoolVar(&options.Force, "force", false, "overwrite existing credentials for profile")
-	_ = command.MarkFlagRequired("profile")
+	command.Flags().BoolVar(&options.Force, "force", false, "overwrite existing credentials")
 
 	return command
 }

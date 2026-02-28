@@ -59,24 +59,32 @@ func TestLegacyAuthSetCommandRemoved(t *testing.T) {
 	}
 }
 
-func TestLegacyKeysAliasRemoved(t *testing.T) {
-	_, _, err := executeCommand("keys", "set")
+func TestLegacyAuthUseCommandRemoved(t *testing.T) {
+	_, _, err := executeCommand("auth", "use")
 	if err == nil {
 		t.Fatal("expected unknown command error")
 	}
-	if !strings.Contains(err.Error(), "unknown command \"keys\"") {
+	if !strings.Contains(err.Error(), "unknown command \"use\"") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestAuthLoginRequiresProfile(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	_, _, err := executeCommandWithInput("key\nsecret\n", "auth", "login")
+func TestLegacyAuthListCommandRemoved(t *testing.T) {
+	_, _, err := executeCommand("auth", "list")
 	if err == nil {
-		t.Fatal("expected profile validation error")
+		t.Fatal("expected unknown command error")
 	}
-	if !strings.Contains(err.Error(), "required flag") {
+	if !strings.Contains(err.Error(), "unknown command \"list\"") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLegacyAuthCurrentCommandRemoved(t *testing.T) {
+	_, _, err := executeCommand("auth", "current")
+	if err == nil {
+		t.Fatal("expected unknown command error")
+	}
+	if !strings.Contains(err.Error(), "unknown command \"current\"") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -84,12 +92,24 @@ func TestAuthLoginRequiresProfile(t *testing.T) {
 func TestAuthLoginRejectsInvalidStdinContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
-	_, _, err := executeCommandWithInput("only-key\n", "auth", "login", "--profile", "dev")
+	_, _, err := executeCommandWithInput("only-key\n", "auth", "login")
 	if err == nil {
 		t.Fatal("expected stdin parsing error")
 	}
 	if !strings.Contains(err.Error(), "exactly two non-empty lines") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthStatusWorksWhenLoggedOut(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	stdout, _, err := executeCommand("auth", "status")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !strings.Contains(stdout, "logged_in=false") {
+		t.Fatalf("expected logged_out status, got: %q", stdout)
 	}
 }
 

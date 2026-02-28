@@ -10,7 +10,7 @@ func newAuthCmd() *cobra.Command {
 	authCmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Manage authentication credentials",
-		Long:  "Manage WhiteBIT API authentication credentials by profile.",
+		Long:  "Manage WhiteBIT API authentication credentials in single-session mode.",
 		RunE: func(command *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				return fmt.Errorf("unknown command %q for %q", args[0], command.CommandPath())
@@ -21,10 +21,8 @@ func newAuthCmd() *cobra.Command {
 	}
 
 	authCmd.AddCommand(newAuthLoginCmd())
-	authCmd.AddCommand(newAuthUseCmd())
-	authCmd.AddCommand(newAuthListCmd())
 	authCmd.AddCommand(newAuthLogoutCmd())
-	authCmd.AddCommand(newAuthCurrentCmd())
+	authCmd.AddCommand(newAuthStatusCmd())
 	authCmd.AddCommand(newAuthTestCmd())
 
 	return authCmd
