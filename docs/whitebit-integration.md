@@ -56,6 +56,8 @@ Implementation rule:
 - sign encoded payload with HMAC-SHA512(secret)
 - send payload fields as JSON body and include headers above
 - for documented finite-value fields, use typed enums in code instead of raw strings (examples: `side` = `buy|sell`, `positionSide` = `long|short`)
+- client must mirror official WhiteBIT documentation only (endpoints, request/response fields, documented errors), with no business/use-case logic in client methods
+- business logic belongs to app services and adapters (example: login credential verification policy is adapter/service behavior, not a transport client method)
 
 ## Credential Handling Rules (CLI Side)
 

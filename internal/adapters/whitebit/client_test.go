@@ -105,7 +105,7 @@ func TestClientStatusErrorMapping(t *testing.T) {
 	}
 }
 
-func TestClientVerifyMapsErrorsForAuthLogin(t *testing.T) {
+func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 	testCases := []struct {
 		name        string
 		statusCode  int
@@ -136,7 +136,8 @@ func TestClientVerifyMapsErrorsForAuthLogin(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL, server.Client(), fixedNonceSource{value: 1})
-			err := client.Verify(context.Background(), domainauth.Credential{
+			adapter := NewCredentialVerifierAdapter(client)
+			err := adapter.Verify(context.Background(), domainauth.Credential{
 				APIKey:    "public-key",
 				APISecret: []byte("secret-key"),
 			})

@@ -125,8 +125,11 @@ Current adapter behavior (`internal/adapters/whitebit`):
   - `POST /api/v4/collateral-account/hedge-mode`
   - `POST /api/v4/order/collateral/limit`
   - `POST /api/v4/order/collateral/bulk`
-- auth login uses this shared client (hedge-mode endpoint) instead of a dedicated probe-only client
+- auth login verification is implemented through a dedicated credential-verifier adapter that calls the client hedge-mode endpoint
 - request signing is centralized and reused for all private calls (`X-TXC-APIKEY`, `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`)
+- golden rule: client mirrors API documentation only (endpoints/fields/errors), nothing more and nothing less
+  - do not add business methods like `Verify` to the transport client
+  - business orchestration belongs to application services (for example `LoginService`) and their outbound adapters
 
 ## Backlog And Todo Workflow
 
@@ -390,6 +393,10 @@ Mandatory engineering rules derived from these docs:
   - validate enum values before HTTP request execution
   - do not use ad-hoc raw string literals at call sites for documented enum fields
   - keep enum names and values synchronized with official API docs when endpoints change
+- Transport client mirror rule (MANDATORY):
+  - transport clients must be strict mirrors of official API documentation (endpoints, payload fields, documented enums, response/error mapping)
+  - transport clients must not contain use-case/business decisions
+  - use-case behavior (for example login credential verification policy) belongs to `internal/app/services/*` and adapter layer, not transport client methods
 
 ## Architecture Standard (Hexagonal / Ports And Adapters)
 

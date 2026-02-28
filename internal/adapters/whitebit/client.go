@@ -17,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
@@ -219,21 +218,4 @@ func signPayload(encodedPayload string, secret []byte) string {
 	mac := hmac.New(sha512.New, secret)
 	_, _ = mac.Write([]byte(encodedPayload))
 	return hex.EncodeToString(mac.Sum(nil))
-}
-
-// Verify checks credential validity and collateral permission for auth login flow.
-func (client *Client) Verify(ctx context.Context, credential domainauth.Credential) error {
-	_, err := client.GetCollateralAccountHedgeMode(ctx, credential)
-	if err == nil {
-		return nil
-	}
-
-	switch {
-	case errors.Is(err, ErrUnauthorized):
-		return ports.ErrCredentialVerifyUnauthorized
-	case errors.Is(err, ErrForbidden):
-		return ports.ErrCredentialVerifyForbidden
-	default:
-		return ports.ErrCredentialVerifyUnavailable
-	}
 }

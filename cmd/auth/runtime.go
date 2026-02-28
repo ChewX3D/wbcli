@@ -25,7 +25,7 @@ func defaultServicesFactory() (*Services, error) {
 	}
 
 	credentialStore := secretstore.NewOSKeychainStore()
-	credentialVerifier := whitebit.NewDefaultClient()
+	credentialVerifier := whitebit.NewDefaultCredentialVerifierAdapter()
 	clock := authservice.SystemClock{}
 
 	return &Services{
