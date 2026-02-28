@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "label": "Binary size (amd64)",
-  "message": "2.93 MB",
+  "message": "2.89 MB",
   "color": "informational",
   "cacheSeconds": 300
 }
