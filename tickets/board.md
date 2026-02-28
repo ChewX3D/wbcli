@@ -1,6 +1,6 @@
 # Ticket Board
 
-_Last updated: 2026-02-28T14:57:06+01:00_
+_Last updated: 2026-02-28T21:08:43+01:00_
 
 ## Backlog
 - [PROJ-2026-004](./backlog/PROJ-2026-004-add-order-range-planner-with-constant-and-arithmetic-amount-modes.md) | P1 | Owner: chewbaccalol | Due: 2026-03-06 | Add order range planner with constant and arithmetic amount modes
@@ -8,7 +8,7 @@ _Last updated: 2026-02-28T14:57:06+01:00_
 - [PROJ-2026-009](./backlog/PROJ-2026-009-add-geometric-and-capped-geometric-amount-modes-with-exposure-cap-checks.md) | P2 | Owner: chewbaccalol | Due: 2026-03-10 | Add geometric and capped-geometric amount modes with exposure cap checks
 - [PROJ-2026-010](./backlog/PROJ-2026-010-add-cancel-and-reconcile-commands-for-batch-orders.md) | P2 | Owner: chewbaccalol | Due: 2026-03-11 | Add cancel and reconcile commands for batch orders
 - [PROJ-2026-011](./backlog/PROJ-2026-011-add-structured-audit-log-and-local-run-history-for-executions.md) | P2 | Owner: chewbaccalol | Due: 2026-03-12 | Add structured audit log and local run history for executions
-- [PROJ-2026-012](./backlog/PROJ-2026-012-add-optional-mongodb-persistence-adapter-for-order-and-audit-history.md) | P3 | Owner: chewbaccalol | Due: 2026-03-16 | Add optional MongoDB persistence adapter for order and audit history
+- [PROJ-2026-012](./backlog/PROJ-2026-012-add-optional-nosql-persistence-adapter-for-order-and-audit-history.md) | P3 | Owner: chewbaccalol | Due: 2026-03-16 | Add optional NoSQL persistence adapter for order and audit history
 - [PROJ-2026-013](./backlog/PROJ-2026-013-add-release-packaging-and-install-documentation-for-cli.md) | P2 | Owner: chewbaccalol | Due: 2026-03-17 | Add release packaging and install documentation for CLI
 - [PROJ-2026-015](./backlog/PROJ-2026-015-implement-credential-access-controls-session-unlock-and-key-rotation-workflow.md) | P1 | Owner: chewbaccalol | Due: 2026-03-07 | Implement credential access controls session unlock and key rotation workflow
 
