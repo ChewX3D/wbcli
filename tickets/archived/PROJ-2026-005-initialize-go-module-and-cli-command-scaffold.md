@@ -3,11 +3,11 @@
 ID: PROJ-2026-005
 Title: Initialize Go module and CLI command scaffold
 Priority: P0
-Status: Ready
+Status: Archived
 Owner: chewbaccalol
 Due Date: 2026-02-28
 Created: 2026-02-26
-Updated: 2026-02-26
+Updated: 2026-02-28
 Links: [CLI Design](../../docs/cli-design.md)
 
 Problem:
@@ -39,3 +39,4 @@ Rollback Plan:
 Status Notes:
 - 2026-02-26: Created in Ready.
 - 2026-02-26: Marked as Phase 0 foundation for all implementation tickets.
+- 2026-02-28: Canceled by requester.

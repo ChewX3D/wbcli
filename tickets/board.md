@@ -1,6 +1,6 @@
 # Ticket Board
 
-_Last updated: 2026-02-28T21:08:43+01:00_
+_Last updated: 2026-02-28T21:10:01+01:00_
 
 ## Backlog
 - [PROJ-2026-004](./backlog/PROJ-2026-004-add-order-range-planner-with-constant-and-arithmetic-amount-modes.md) | P1 | Owner: chewbaccalol | Due: 2026-03-06 | Add order range planner with constant and arithmetic amount modes
@@ -15,7 +15,6 @@ _Last updated: 2026-02-28T21:08:43+01:00_
 ## Ready
 - [PROJ-2026-002](./ready/PROJ-2026-002-implement-whitebit-signed-http-client.md) | P1 | Owner: chewbaccalol | Due: 2026-03-03 | Implement WhiteBIT signed HTTP client
 - [PROJ-2026-003](./ready/PROJ-2026-003-add-order-place-command-using-collateral-limit-order-endpoint.md) | P1 | Owner: chewbaccalol | Due: 2026-03-05 | Add order place command using collateral limit order endpoint
-- [PROJ-2026-005](./ready/PROJ-2026-005-initialize-go-module-and-cli-command-scaffold.md) | P0 | Owner: chewbaccalol | Due: 2026-02-28 | Initialize Go module and CLI command scaffold
 - [PROJ-2026-006](./ready/PROJ-2026-006-add-profile-config-store-for-non-secret-cli-metadata.md) | P1 | Owner: chewbaccalol | Due: 2026-03-01 | Add profile config store for non-secret CLI metadata
 - [PROJ-2026-007](./ready/PROJ-2026-007-set-up-ci-quality-gates-and-go-test-baseline.md) | P1 | Owner: chewbaccalol | Due: 2026-03-02 | Set up CI quality gates and Go test baseline
 - [PROJ-2026-014](./ready/PROJ-2026-014-define-credential-encryption-policy-and-encrypted-file-fallback-backend.md) | P1 | Owner: chewbaccalol | Due: 2026-03-01 | Define credential encryption policy and encrypted-file fallback backend
@@ -34,5 +33,5 @@ _Last updated: 2026-02-28T21:08:43+01:00_
 - [PROJ-2026-016](./done/PROJ-2026-016-remove-auth-profiles-and-switch-to-single-session.md) | P1 | Owner: nocle | Due: 2026-03-03 | Remove auth profiles and switch to single-session auth
 
 ## Archived
-- _(empty)_
+- [PROJ-2026-005](./archived/PROJ-2026-005-initialize-go-module-and-cli-command-scaffold.md) | P0 | Owner: chewbaccalol | Due: 2026-02-28 | Initialize Go module and CLI command scaffold
 
