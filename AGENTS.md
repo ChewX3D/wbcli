@@ -53,6 +53,18 @@ Rules:
 - when implementing ticket scope, immediately mark completed acceptance/test checklist points as done (`[x]`) in the same change set
 - do not leave completed ticket points unchecked; keep ticket progress state accurate at all times
 
+## Spec Folder Model
+
+`spec/` is the canonical current-state snapshot of the system.
+
+Interpretation rules:
+
+- tickets are change history (event stream): they describe what happened and why
+- `spec/` is system state (materialized result): it describes what is true now
+- when ticket implementation changes intended behavior/architecture/contracts, update `spec/` in the same change set
+- if ticket text and `spec/` disagree, `spec/` is source of truth for current behavior; ticket keeps historical context
+- avoid keeping long-lived behavior definitions only in tickets; move final decisions into `spec/`
+
 ## Backlog And Todo Workflow
 
 ### Triage
@@ -424,6 +436,7 @@ internal/
   cli/
 mocks/
 docs/
+spec/
 configs/
 tickets/
 scripts/
@@ -457,6 +470,9 @@ What goes where:
   - do not hand-edit generated files; regenerate with `make gen-mocks`
 - `docs/`
   - product, architecture, and operational documentation
+- `spec/`
+  - canonical snapshot of current system behavior, architecture, interfaces, and constraints
+  - update when accepted behavior changes; do not treat tickets as long-term source of truth
 - `configs/`
   - static config artifacts (badges, templates, build/runtime config)
 - `tickets/`
