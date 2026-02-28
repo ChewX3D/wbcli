@@ -79,7 +79,6 @@ Available commands:
 - `wbcli auth login`
 - `wbcli auth logout`
 - `wbcli auth status`
-- `wbcli auth test`
 
 Removed commands:
 
@@ -87,6 +86,7 @@ Removed commands:
 - `wbcli auth use`
 - `wbcli auth list`
 - `wbcli auth current`
+- `wbcli auth test`
 
 `auth login` contract:
 
@@ -96,6 +96,10 @@ Removed commands:
   - line 2 = API secret
 - max payload size: `16 KiB`
 - no `--api-key`, no `--api-secret`, no `--profile`
+- login performs signed connectivity validation with WhiteBIT via:
+  - `POST /api/v4/collateral-account/hedge-mode`
+  - request body includes `request` + monotonic `nonce`
+  - credentials are persisted only when probe succeeds
 
 Outputs:
 
@@ -111,11 +115,6 @@ Storage/security boundaries:
 - non-secret metadata is stored in `~/.wbcli/config.yaml`
 - config permission target on macOS/Linux: `0600`
 - command outputs/errors must not leak API secret, payload, or signature values
-
-Auth test status:
-
-- `auth test` remains deferred/future scope until WhiteBIT client work (`PROJ-2026-002`) is implemented
-- tracking ticket: `PROJ-2026-017` (currently `Blocked`)
 
 ## Backlog And Todo Workflow
 
@@ -551,8 +550,8 @@ internal/adapters/secretstore/keychain.go
 
 Specific rule for current roadmap:
 
-- implement auth services (`login/use/profiles/logout/current`) independently from the WhiteBIT client adapter
-- keep `auth test` as the last auth command, implemented only after WhiteBIT client readiness
+- implement auth services independently from order/placement client development
+- keep login connectivity validation bound to WhiteBIT `POST /api/v4/collateral-account/hedge-mode`
 
 ## Documentation Update Policy
 

@@ -18,13 +18,13 @@ Provide a safe, scriptable CLI for WhiteBIT collateral trading with enough struc
 - `printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login`
 - `wbcli auth status`
 - `wbcli auth logout`
-- `wbcli auth test`
 
 Implementation notes:
 
 - store secrets using platform secret storage (Keychain/libsecret/Credential Manager)
 - keep only non-sensitive metadata in `~/.wbcli/config.yaml` (backend, timestamps, key hint)
 - `auth login` accepts credentials only from stdin payload (first line API key, second line API secret)
+- `auth login` performs signed connectivity validation via `POST /api/v4/collateral-account/hedge-mode` before persisting credentials
 - no profile concept in auth flow; single-session mode only (`logged in` or `logged out`)
 
 ### Credential Encryption and Access Plan

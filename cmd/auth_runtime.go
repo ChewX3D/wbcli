@@ -5,6 +5,7 @@ import (
 
 	"github.com/ChewX3D/wbcli/internal/adapters/configstore"
 	"github.com/ChewX3D/wbcli/internal/adapters/secretstore"
+	"github.com/ChewX3D/wbcli/internal/adapters/whitebit"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
 )
 
@@ -12,7 +13,6 @@ type authServices struct {
 	login  *authservice.LoginService
 	logout *authservice.LogoutService
 	status *authservice.StatusService
-	test   *authservice.TestService
 }
 
 var authServicesFactory = defaultAuthServicesFactory
@@ -24,12 +24,12 @@ func defaultAuthServicesFactory() (*authServices, error) {
 	}
 
 	credentialStore := secretstore.NewOSKeychainStore()
+	authProbe := whitebit.NewDefaultAuthProbe()
 	clock := authservice.SystemClock{}
 
 	return &authServices{
-		login:  authservice.NewLoginService(credentialStore, sessionStore, clock),
+		login:  authservice.NewLoginService(credentialStore, sessionStore, clock, authProbe),
 		logout: authservice.NewLogoutService(credentialStore, sessionStore),
 		status: authservice.NewStatusService(sessionStore),
-		test:   authservice.NewTestService(credentialStore, nil),
 	}, nil
 }

@@ -3,7 +3,7 @@
 ID: PROJ-2026-017
 Title: Finalize auth test and capture macOS/Linux auth security evidence
 Priority: P1
-Status: Blocked
+Status: Archived
 Owner: chewbaccalol
 Due Date: 2026-03-10
 Created: 2026-02-28
@@ -65,3 +65,4 @@ Status Notes:
 - 2026-02-28: Scope extracted from PROJ-2026-001 canonical checklist to allow closing PROJ-2026-001 while tracking remaining auth test and platform evidence work.
 - 2026-02-28: Manual verification update from user: `auth login` and `auth logout` confirmed working on macOS; Linux not tested yet.
 - 2026-02-28: Deferred: auth test is future scope until WhiteBIT client (PROJ-2026-002) is started.
+- 2026-02-28: Superseded: removed auth test command; auth login now validates connectivity via signed POST /api/v4/collateral-account/hedge-mode.

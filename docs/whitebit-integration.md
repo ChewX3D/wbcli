@@ -8,6 +8,7 @@ Source references:
 
 ## Relevant Endpoints
 
+- `POST /api/v4/collateral-account/hedge-mode` (auth connectivity probe during `wbcli auth login`)
 - `POST /api/v4/collateral-limit-order`
 - `POST /api/v4/collateral-bulk-limit-order` (for batch/range placement)
 

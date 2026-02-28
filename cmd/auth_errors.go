@@ -27,14 +27,18 @@ func mapAuthError(err error) error {
 		return errors.New("stdin credential payload must contain exactly two non-empty lines: api_key then api_secret")
 	case errors.Is(err, authservice.ErrNotLoggedIn):
 		return errors.New("not logged in; run wbcli auth login first")
-	case errors.Is(err, authservice.ErrAuthTestNotImplemented):
-		return errors.New("auth test is not implemented yet; it will be enabled after WhiteBIT client integration")
 	case errors.Is(err, ports.ErrCredentialNotFound):
 		return errors.New("not logged in; run wbcli auth login first")
 	case errors.Is(err, ports.ErrSecretStoreUnavailable):
 		return errors.New("os-keychain backend is unavailable on this system")
 	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
 		return errors.New("os-keychain access denied; unlock keychain/secret service and retry")
+	case errors.Is(err, ports.ErrAuthProbeUnauthorized):
+		return errors.New("whitebit auth failed; check your public key and secret key")
+	case errors.Is(err, ports.ErrAuthProbeForbidden):
+		return errors.New("whitebit auth succeeded but required permission is missing for collateral-account hedge-mode")
+	case errors.Is(err, ports.ErrAuthProbeUnavailable):
+		return errors.New("whitebit auth check is unavailable right now; retry later")
 	default:
 		return err
 	}

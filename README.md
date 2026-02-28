@@ -21,7 +21,7 @@ This repository currently defines the project plan and operating docs for:
   - store API credentials in OS keychain/secret store where possible
   - never persist raw secrets in git-tracked files
   - single-session auth state: user is logged in or logged out
-  - commands: `auth login`, `auth logout`, `auth status`, `auth test`
+  - commands: `auth login`, `auth logout`, `auth status`
 - `order place`:
   - place one collateral limit order via WhiteBIT authenticated API
 - `order range`:
@@ -66,6 +66,8 @@ go run . --help
 1. API key
 2. API secret
 
+`auth login` validates credentials by sending a signed `POST /api/v4/collateral-account/hedge-mode` request to WhiteBIT before saving them locally.
+
 Local shell example:
 
 ```bash
@@ -102,7 +104,6 @@ Other auth commands:
 ```bash
 wbcli auth status
 wbcli auth logout
-wbcli auth test
 ```
 
 Security notes:

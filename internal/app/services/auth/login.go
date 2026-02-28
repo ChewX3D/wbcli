@@ -26,14 +26,21 @@ type LoginService struct {
 	credentialStore ports.CredentialStore
 	sessionStore    ports.SessionStore
 	clock           ports.Clock
+	authProbe       ports.AuthProbe
 }
 
 // NewLoginService constructs LoginService.
-func NewLoginService(credentialStore ports.CredentialStore, sessionStore ports.SessionStore, clock ports.Clock) *LoginService {
+func NewLoginService(
+	credentialStore ports.CredentialStore,
+	sessionStore ports.SessionStore,
+	clock ports.Clock,
+	authProbe ports.AuthProbe,
+) *LoginService {
 	return &LoginService{
 		credentialStore: credentialStore,
 		sessionStore:    sessionStore,
 		clock:           clock,
+		authProbe:       authProbe,
 	}
 }
 
@@ -47,6 +54,13 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 		return LoginResult{}, err
 	}
 	defer domainauth.WipeBytes(request.APISecret)
+
+	if service.authProbe == nil {
+		return LoginResult{}, ports.ErrAuthProbeUnavailable
+	}
+	if err := service.authProbe.Probe(ctx, credential); err != nil {
+		return LoginResult{}, fmt.Errorf("probe credential: %w", err)
+	}
 
 	previous, found, err := service.sessionStore.GetSession(ctx)
 	if err != nil {

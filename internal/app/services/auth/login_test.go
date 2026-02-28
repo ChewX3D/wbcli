@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -70,10 +71,28 @@ func (clock fixedClock) Now() time.Time {
 	return clock.now
 }
 
+type fakeAuthProbe struct {
+	err        error
+	callCount  int
+	lastAPIKey string
+}
+
+func (probe *fakeAuthProbe) Probe(_ context.Context, credential domainauth.Credential) error {
+	probe.callCount++
+	probe.lastAPIKey = credential.APIKey
+	return probe.err
+}
+
 func TestLoginServiceExecuteSuccess(t *testing.T) {
 	credentialStore := &fakeCredentialStore{backendName: "os-keychain"}
 	sessionStore := &fakeSessionStore{}
-	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Date(2026, 2, 26, 12, 0, 0, 0, time.UTC)})
+	authProbe := &fakeAuthProbe{}
+	service := NewLoginService(
+		credentialStore,
+		sessionStore,
+		fixedClock{now: time.Date(2026, 2, 26, 12, 0, 0, 0, time.UTC)},
+		authProbe,
+	)
 
 	secret := []byte("secret-1")
 	result, err := service.Execute(context.Background(), LoginRequest{
@@ -88,6 +107,12 @@ func TestLoginServiceExecuteSuccess(t *testing.T) {
 	}
 	if result.APIKeyHint == "" {
 		t.Fatalf("expected api key hint")
+	}
+	if authProbe.callCount != 1 {
+		t.Fatalf("expected exactly one auth probe call, got %d", authProbe.callCount)
+	}
+	if authProbe.lastAPIKey != "api-key-1" {
+		t.Fatalf("expected probe api key api-key-1, got %q", authProbe.lastAPIKey)
 	}
 	if credentialStore.credential == nil {
 		t.Fatalf("expected credential to be stored")
@@ -112,7 +137,8 @@ func TestLoginServiceExecuteOverwritesExistingCredential(t *testing.T) {
 		credential:  &domainauth.Credential{APIKey: "old", APISecret: []byte("old-secret")},
 	}
 	sessionStore := &fakeSessionStore{}
-	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()})
+	authProbe := &fakeAuthProbe{}
+	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()}, authProbe)
 
 	result, err := service.Execute(context.Background(), LoginRequest{
 		APIKey:    "new",
@@ -129,5 +155,29 @@ func TestLoginServiceExecuteOverwritesExistingCredential(t *testing.T) {
 	}
 	if credentialStore.credential.APIKey != "new" {
 		t.Fatalf("expected API key to be overwritten, got %q", credentialStore.credential.APIKey)
+	}
+}
+
+func TestLoginServiceExecuteFailsWhenProbeFails(t *testing.T) {
+	credentialStore := &fakeCredentialStore{backendName: "os-keychain"}
+	sessionStore := &fakeSessionStore{}
+	authProbe := &fakeAuthProbe{err: ports.ErrAuthProbeUnauthorized}
+	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()}, authProbe)
+
+	_, err := service.Execute(context.Background(), LoginRequest{
+		APIKey:    "bad",
+		APISecret: []byte("secret"),
+	})
+	if err == nil {
+		t.Fatal("expected probe error")
+	}
+	if !errors.Is(err, ports.ErrAuthProbeUnauthorized) {
+		t.Fatalf("expected unauthorized probe error, got %v", err)
+	}
+	if credentialStore.credential != nil {
+		t.Fatalf("expected credential to stay unsaved on probe failure")
+	}
+	if sessionStore.session != nil {
+		t.Fatalf("expected session metadata to stay unsaved on probe failure")
 	}
 }

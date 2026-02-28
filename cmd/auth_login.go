@@ -12,8 +12,8 @@ import (
 func newAuthLoginCmd() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "login",
-		Short: "Store credentials from stdin",
-		Long:  "Store API key and API secret in secure OS keychain backend using stdin-only input.",
+		Short: "Validate and store credentials from stdin",
+		Long:  "Validate WhiteBIT access via collateral hedge-mode probe, then store API key and API secret in secure OS keychain backend using stdin-only input.",
 		Example: `  # Option 1: local inline values
   WBCLI_API_KEY='1' WBCLI_API_SECRET='2' sh -c 'printf "%s\n%s\n" "$WBCLI_API_KEY" "$WBCLI_API_SECRET"' | wbcli auth login
 

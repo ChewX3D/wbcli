@@ -83,6 +83,10 @@ func TestLegacyAuthCurrentCommandRemoved(t *testing.T) {
 	assertUnknownAuthSubcommand(t, "current")
 }
 
+func TestLegacyAuthTestCommandRemoved(t *testing.T) {
+	assertUnknownAuthSubcommand(t, "test")
+}
+
 func TestAuthLoginRejectsInvalidStdinContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -122,7 +126,7 @@ func TestAuthLogoutWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore))
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
 
 	stdout, stderr, err := executeCommand("auth", "logout")
 	if err != nil {
@@ -146,7 +150,7 @@ func TestAuthLogoutIdempotentWhenLoggedOut(t *testing.T) {
 	credentialStore := &testCredentialStore{backendName: "os-keychain"}
 	sessionStore := &testSessionStore{}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore))
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
 
 	stdout, _, err := executeCommand("auth", "logout")
 	if err != nil {
@@ -169,7 +173,7 @@ func TestAuthStatusWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore))
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
 
 	stdout, _, err := executeCommand("auth", "status")
 	if err != nil {
@@ -201,6 +205,24 @@ func TestAuthLoginUnavailableStoreReturnsActionableError(t *testing.T) {
 	}
 }
 
+func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
+	credentialStore := &testCredentialStore{
+		backendName: "os-keychain",
+	}
+	sessionStore := &testSessionStore{}
+	authProbe := &testAuthProbe{err: ports.ErrAuthProbeUnauthorized}
+
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, authProbe))
+
+	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "whitebit auth failed; check your public key and secret key") {
+		t.Fatalf("expected actionable auth-failed error, got %v", err)
+	}
+}
+
 func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	credentialStore := &testCredentialStore{
 		backendName: "os-keychain",
@@ -208,7 +230,7 @@ func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore))
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
 
 	_, _, err := executeCommand("auth", "logout")
 	if err == nil {
@@ -285,16 +307,24 @@ func withAuthServicesFactoryError(t *testing.T, factoryErr error) {
 	})
 }
 
-func testAuthServices(credentialStore ports.CredentialStore, sessionStore ports.SessionStore) *authServices {
+func testAuthServices(
+	credentialStore ports.CredentialStore,
+	sessionStore ports.SessionStore,
+	authProbe ports.AuthProbe,
+) *authServices {
+	if authProbe == nil {
+		authProbe = &testAuthProbe{}
+	}
+
 	return &authServices{
 		login: authservice.NewLoginService(
 			credentialStore,
 			sessionStore,
 			testClock{now: time.Date(2026, 2, 28, 12, 0, 0, 0, time.UTC)},
+			authProbe,
 		),
 		logout: authservice.NewLogoutService(credentialStore, sessionStore),
 		status: authservice.NewStatusService(sessionStore),
-		test:   authservice.NewTestService(credentialStore, nil),
 	}
 }
 
@@ -401,4 +431,12 @@ type testClock struct {
 
 func (clock testClock) Now() time.Time {
 	return clock.now
+}
+
+type testAuthProbe struct {
+	err error
+}
+
+func (probe *testAuthProbe) Probe(_ context.Context, _ domainauth.Credential) error {
+	return probe.err
 }
