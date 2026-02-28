@@ -11,10 +11,18 @@ import (
 
 func newAuthLoginCmd() *cobra.Command {
 	command := &cobra.Command{
-		Use:     "login",
-		Short:   "Store credentials from stdin",
-		Long:    "Store API key and API secret in secure OS keychain backend using stdin-only input.",
-		Example: "printf '%s\\n%s\\n' \"$WBCLI_API_KEY\" \"$WBCLI_API_SECRET\" | wbcli auth login",
+		Use:   "login",
+		Short: "Store credentials from stdin",
+		Long:  "Store API key and API secret in secure OS keychain backend using stdin-only input.",
+		Example: `  # Local shell with env vars
+  printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+
+  # CI job with secrets injected as env vars
+  printf '%s\n%s\n' "$WBCLI_API_KEY" "$WBCLI_API_SECRET" | wbcli auth login
+
+  # Read from a local file that contains two lines:
+  # line 1 = api key, line 2 = api secret
+  cat ./secrets/wbcli-auth.txt | wbcli auth login`,
 		RunE: func(command *cobra.Command, args []string) error {
 			if inputFile, ok := command.InOrStdin().(*os.File); ok && clitools.IsTerminalInput(inputFile) {
 				return mapAuthError(clitools.ErrCredentialInputMissing)
