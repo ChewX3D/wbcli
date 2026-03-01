@@ -1,7 +1,4 @@
-.PHONY: install gen-mocks
-
-install:
-	go install .
+.PHONY: gen-mocks
 
 gen-mocks:
 	rm -frd mocks
