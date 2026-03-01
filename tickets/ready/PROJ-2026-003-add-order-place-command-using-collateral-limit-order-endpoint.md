@@ -17,11 +17,10 @@ Outcome:
 `wbcli collateral order place` submits one collateral limit order, validates inputs, and returns consistent table/json output.
 
 Acceptance Criteria:
-- [ ] Command supports required fields (`market`, `side`, `amount`, `price`, `expiration`) and optional flags.
+- [ ] Command supports required fields (`market`, `side`, `amount`, `price`) and optional flags.
 - [ ] `--side` accepts aliases: `buy|long` and `sell|short`.
 - [ ] Side alias normalization is performed in CLI command adapter files (`cmd/*`) before calling services; services receive canonical values only and do not normalize aliases.
 - [ ] `collateral order place` always submits with `postOnly=true` (no CLI flag to disable).
-- [ ] Input validation blocks invalid combinations such as `rpi=true` with `ioc=true`.
 - [ ] Command reads credentials from single-session auth state and uses signed client adapter.
 - [ ] Command path is `wbcli collateral order place` (not `wbcli order place`).
 - [ ] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete `BTC-PERP` examples for common flows.
@@ -71,7 +70,7 @@ Implementation Notes For This Ticket:
    - `sell` and `short` map to transport `side=sell`
    Service layer must treat incoming side as canonical and must not contain alias normalization logic.
 3. Force `postOnly=true` in use-case/adapters for every submission.
-4. Do not add `ioc`/`rpi` flags in this step; if introduced later, validate their conflict before request execution.
+4. Keep this ticket scope simple: do not add `ioc`/`rpi` flags and do not implement related conflict handling in this ticket.
 5. Remove legacy `--profile` behavior from order commands to align with current single-session auth model.
 6. Rename command path to `wbcli collateral order place`.
 7. `--help` text must be detailed and explicit:
@@ -100,3 +99,4 @@ Status Notes:
 - 2026-03-01: Added reuse-first alignment with current architecture, clarified `postOnly=true` requirement, and documented concrete implementation mapping to existing code.
 - 2026-03-01: Added `--side` alias requirement (`buy|long`, `sell|short`) and explicit normalization mapping for implementation.
 - 2026-03-01: Updated command target to `wbcli collateral order place`, required CLI-layer side normalization only, and added mandatory exhaustive `--help` documentation with `BTC-PERP` examples.
+- 2026-03-01: Simplified scope by removing `expiration` and removing `ioc/rpi` validation from this ticket.
