@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -213,7 +212,11 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 	credentialVerifier := &testCredentialVerifier{
-		err: fmt.Errorf("%w: status 401: invalid signature", ports.ErrCredentialVerifyUnauthorized),
+		err: ports.NewCredentialVerificationError(
+			ports.CredentialVerificationInvalidCredentials,
+			"/api/v4/collateral-account/hedge-mode",
+			"status 401: invalid signature",
+		),
 	}
 
 	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
@@ -236,9 +239,10 @@ func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 	credentialVerifier := &testCredentialVerifier{
-		err: fmt.Errorf(
-			"%w: status 401: This API Key is not authorized to perform this action.: whitebit unauthorized",
-			ports.ErrCredentialVerifyUnauthorized,
+		err: ports.NewCredentialVerificationError(
+			ports.CredentialVerificationInsufficientAccess,
+			"/api/v4/collateral-account/hedge-mode",
+			"status 401: This API Key is not authorized to perform this action.",
 		),
 	}
 
@@ -250,6 +254,28 @@ func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "enable access to endpoint /api/v4/collateral-account/hedge-mode") {
 		t.Fatalf("expected endpoint access instruction, got %v", err)
+	}
+}
+
+func TestAuthLoginInsufficientAccessIncludesProvidedEndpoint(t *testing.T) {
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
+	credentialVerifier := &testCredentialVerifier{
+		err: ports.NewCredentialVerificationError(
+			ports.CredentialVerificationInsufficientAccess,
+			"/api/v4/order/collateral/limit",
+			"status 401: not authorized",
+		),
+	}
+
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
+
+	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "enable access to endpoint /api/v4/order/collateral/limit") {
+		t.Fatalf("expected dynamic endpoint in message, got %v", err)
 	}
 }
 

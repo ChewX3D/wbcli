@@ -57,7 +57,11 @@ func (service *LoginService) Execute(ctx context.Context, request LoginRequest) 
 	defer domainauth.WipeBytes(request.APISecret)
 
 	if service.credentialVerifier == nil {
-		return LoginResult{}, ports.ErrCredentialVerifyUnavailable
+		return LoginResult{}, ports.NewCredentialVerificationError(
+			ports.CredentialVerificationUnavailable,
+			"",
+			"credential verifier is not configured",
+		)
 	}
 	verificationResult, err := service.credentialVerifier.Verify(ctx, credential)
 	if err != nil {

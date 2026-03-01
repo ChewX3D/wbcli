@@ -3,7 +3,6 @@ package authcmd
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
@@ -11,119 +10,76 @@ import (
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
-const credentialVerificationEndpoint = "/api/v4/collateral-account/hedge-mode"
+type staticAuthErrorRule struct {
+	match   error
+	message string
+}
+
+var staticAuthErrorRules = []staticAuthErrorRule{
+	{match: domainauth.ErrAPIKeyRequired, message: "api key is required in stdin payload"},
+	{match: domainauth.ErrAPISecretRequired, message: "api secret is required in stdin payload"},
+	{match: clitools.ErrCredentialInputMissing, message: "stdin credentials are required: first line API key, second line API secret"},
+	{match: clitools.ErrCredentialInputTooLarge, message: "stdin credential payload exceeds maximum allowed size"},
+	{match: clitools.ErrCredentialInputFormat, message: "stdin credential payload must contain exactly two non-empty lines: api_key then api_secret"},
+	{match: authservice.ErrNotLoggedIn, message: "not logged in; run wbcli auth login first"},
+	{match: ports.ErrCredentialNotFound, message: "not logged in; run wbcli auth login first"},
+	{match: ports.ErrSecretStoreUnavailable, message: "os-keychain backend is unavailable on this system; install/unlock keychain backend and retry"},
+	{match: ports.ErrSecretStorePermissionDenied, message: "os-keychain access denied; keychain is locked or access is restricted"},
+	{match: ports.ErrCredentialVerifyUnauthorized, message: "whitebit credential verification failed: credentials are invalid"},
+	{match: ports.ErrCredentialVerifyForbidden, message: "whitebit credential verification failed: token permissions are insufficient"},
+	{match: ports.ErrCredentialVerifyUnavailable, message: "whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later"},
+}
 
 func mapError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	switch {
-	case errors.Is(err, domainauth.ErrAPIKeyRequired):
-		return errors.New("api key is required in stdin payload")
-	case errors.Is(err, domainauth.ErrAPISecretRequired):
-		return errors.New("api secret is required in stdin payload")
-	case errors.Is(err, clitools.ErrCredentialInputMissing):
-		return errors.New("stdin credentials are required: first line API key, second line API secret")
-	case errors.Is(err, clitools.ErrCredentialInputTooLarge):
-		return errors.New("stdin credential payload exceeds maximum allowed size")
-	case errors.Is(err, clitools.ErrCredentialInputFormat):
-		return errors.New("stdin credential payload must contain exactly two non-empty lines: api_key then api_secret")
-	case errors.Is(err, authservice.ErrNotLoggedIn):
-		return errors.New("not logged in; run wbcli auth login first")
-	case errors.Is(err, ports.ErrCredentialNotFound):
-		return errors.New("not logged in; run wbcli auth login first")
-	case errors.Is(err, ports.ErrSecretStoreUnavailable):
-		return errors.New("os-keychain backend is unavailable on this system; install/unlock keychain backend and retry")
-	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
-		return errors.New("os-keychain access denied; keychain is locked or access is restricted")
-	case errors.Is(err, ports.ErrCredentialVerifyUnauthorized):
-		if indicatesMissingEndpointAccess(err) {
-			return formatCredentialVerificationError(
-				fmt.Sprintf(
-					"whitebit credential verification failed: token permissions are insufficient; enable access to endpoint %s",
-					credentialVerificationEndpoint,
-				),
-				err,
-			)
+	if mappedErr, ok := mapCredentialVerificationError(err); ok {
+		return mappedErr
+	}
+
+	for _, rule := range staticAuthErrorRules {
+		if errors.Is(err, rule.match) {
+			return errors.New(rule.message)
 		}
-		return formatCredentialVerificationError(
-			"whitebit credential verification failed: credentials are invalid",
-			err,
+	}
+
+	return err
+}
+
+func mapCredentialVerificationError(err error) (error, bool) {
+	var verificationErr *ports.CredentialVerificationError
+	if !errors.As(err, &verificationErr) {
+		return nil, false
+	}
+
+	baseMessage := ""
+	switch verificationErr.Reason {
+	case ports.CredentialVerificationInvalidCredentials:
+		baseMessage = "whitebit credential verification failed: credentials are invalid"
+	case ports.CredentialVerificationInsufficientAccess:
+		baseMessage = fmt.Sprintf(
+			"whitebit credential verification failed: token permissions are insufficient; enable access to endpoint %s",
+			normalizeEndpoint(verificationErr.Endpoint),
 		)
-	case errors.Is(err, ports.ErrCredentialVerifyForbidden):
-		return formatCredentialVerificationError(
-			fmt.Sprintf(
-				"whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint %s",
-				credentialVerificationEndpoint,
-			),
-			err,
-		)
-	case errors.Is(err, ports.ErrCredentialVerifyUnavailable):
-		return formatCredentialVerificationError(
-			"whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later",
-			err,
-		)
+	case ports.CredentialVerificationUnavailable:
+		baseMessage = "whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later"
 	default:
-		return err
+		baseMessage = "whitebit credential verification failed"
 	}
+
+	if verificationErr.Detail == "" {
+		return errors.New(baseMessage), true
+	}
+
+	return fmt.Errorf("%s. reason: %s", baseMessage, verificationErr.Detail), true
 }
 
-func formatCredentialVerificationError(baseMessage string, err error) error {
-	reason := extractCredentialVerificationReason(err)
-	if reason == "" {
-		return errors.New(baseMessage)
+func normalizeEndpoint(endpoint string) string {
+	if endpoint == "" {
+		return "<required-endpoint>"
 	}
 
-	return fmt.Errorf("%s. reason: %s", baseMessage, reason)
-}
-
-func extractCredentialVerificationReason(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	reason := err.Error()
-	reason = strings.TrimSpace(reason)
-	if reason == "" {
-		return ""
-	}
-
-	prefixes := []string{
-		"verify credential: ",
-		"credential verification unauthorized: ",
-		"credential verification forbidden: ",
-		"credential verification unavailable: ",
-	}
-
-	for {
-		updated := reason
-		for _, prefix := range prefixes {
-			updated = strings.TrimPrefix(updated, prefix)
-		}
-		if updated == reason {
-			break
-		}
-		reason = updated
-	}
-
-	suffixes := []string{
-		": whitebit unauthorized",
-		": whitebit forbidden",
-	}
-	for _, suffix := range suffixes {
-		reason = strings.TrimSuffix(reason, suffix)
-	}
-
-	return strings.TrimSpace(reason)
-}
-
-func indicatesMissingEndpointAccess(err error) bool {
-	reason := strings.ToLower(extractCredentialVerificationReason(err))
-	if reason == "" {
-		return false
-	}
-
-	return strings.Contains(reason, "not authorized to perform this action") ||
-		strings.Contains(reason, "not authorised to perform this action")
+	return endpoint
 }

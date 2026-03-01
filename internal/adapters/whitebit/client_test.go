@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/ChewX3D/wbcli/internal/app/ports"
@@ -167,6 +168,39 @@ func TestCredentialVerifierAdapterVerifyReturnsEndpointOnSuccess(t *testing.T) {
 	}
 	if result.Endpoint != collateralAccountHedgeModePath {
 		t.Fatalf("expected endpoint %q, got %q", collateralAccountHedgeModePath, result.Endpoint)
+	}
+}
+
+func TestCredentialVerifierAdapterUnauthorizedActionDeniedMapsToInsufficientAccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusUnauthorized)
+		_, _ = writer.Write([]byte(`{"message":"This API Key is not authorized to perform this action."}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, server.Client(), fixedNonceSource{value: 1})
+	adapter := NewCredentialVerifierAdapter(client)
+
+	_, err := adapter.Verify(context.Background(), domainauth.Credential{
+		APIKey:    "public-key",
+		APISecret: []byte("secret-key"),
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	var verificationErr *ports.CredentialVerificationError
+	if !errors.As(err, &verificationErr) {
+		t.Fatalf("expected CredentialVerificationError, got %v", err)
+	}
+	if verificationErr.Reason != ports.CredentialVerificationInsufficientAccess {
+		t.Fatalf("expected insufficient access reason, got %s", verificationErr.Reason)
+	}
+	if verificationErr.Endpoint != collateralAccountHedgeModePath {
+		t.Fatalf("expected endpoint %q, got %q", collateralAccountHedgeModePath, verificationErr.Endpoint)
+	}
+	if !strings.Contains(strings.ToLower(verificationErr.Detail), "not authorized to perform this action") {
+		t.Fatalf("expected action denied detail, got %q", verificationErr.Detail)
 	}
 }
 

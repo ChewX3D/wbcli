@@ -23,6 +23,69 @@ var (
 	ErrCredentialVerifyUnavailable = errors.New("credential verification unavailable")
 )
 
+// CredentialVerificationReason classifies verification failures for user-facing messaging.
+type CredentialVerificationReason string
+
+const (
+	// CredentialVerificationInvalidCredentials means key/secret pair is not accepted.
+	CredentialVerificationInvalidCredentials CredentialVerificationReason = "invalid_credentials"
+	// CredentialVerificationInsufficientAccess means token exists but lacks required endpoint permission.
+	CredentialVerificationInsufficientAccess CredentialVerificationReason = "insufficient_access"
+	// CredentialVerificationUnavailable means remote verification could not be completed reliably.
+	CredentialVerificationUnavailable CredentialVerificationReason = "unavailable"
+)
+
+// CredentialVerificationError carries normalized, endpoint-aware verification failure details.
+type CredentialVerificationError struct {
+	Reason   CredentialVerificationReason
+	Endpoint string
+	Detail   string
+}
+
+// NewCredentialVerificationError constructs CredentialVerificationError.
+func NewCredentialVerificationError(
+	reason CredentialVerificationReason,
+	endpoint string,
+	detail string,
+) *CredentialVerificationError {
+	return &CredentialVerificationError{
+		Reason:   reason,
+		Endpoint: endpoint,
+		Detail:   detail,
+	}
+}
+
+// Error returns compact failure description.
+func (err *CredentialVerificationError) Error() string {
+	if err == nil {
+		return ""
+	}
+
+	if err.Detail == "" {
+		return string(err.Reason)
+	}
+
+	return string(err.Reason) + ": " + err.Detail
+}
+
+// Unwrap maps structured reason to existing sentinel errors.
+func (err *CredentialVerificationError) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+
+	switch err.Reason {
+	case CredentialVerificationInvalidCredentials:
+		return ErrCredentialVerifyUnauthorized
+	case CredentialVerificationInsufficientAccess:
+		return ErrCredentialVerifyForbidden
+	case CredentialVerificationUnavailable:
+		return ErrCredentialVerifyUnavailable
+	default:
+		return nil
+	}
+}
+
 // SessionMetadata holds non-secret auth session information.
 type SessionMetadata struct {
 	Backend    string
