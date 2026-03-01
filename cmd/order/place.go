@@ -1,9 +1,7 @@
 package ordercmd
 
 import (
-	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -26,14 +24,14 @@ func newPlaceCmd() *cobra.Command {
 			if err := validateBase(options.baseOptions); err != nil {
 				return err
 			}
-			if options.Amount <= 0 {
-				return errors.New("--amount must be greater than 0")
+			if err := validatePositiveFloatFlag("--amount", options.Amount); err != nil {
+				return err
 			}
-			if options.Price <= 0 {
-				return errors.New("--price must be greater than 0")
+			if err := validatePositiveFloatFlag("--price", options.Price); err != nil {
+				return err
 			}
-			if options.Expiration < 0 {
-				return errors.New("--expiration must be greater than or equal to 0")
+			if err := validateNonNegativeInt64Flag("--expiration", options.Expiration); err != nil {
+				return err
 			}
 
 			_, err := fmt.Fprintf(
@@ -58,20 +56,4 @@ func newPlaceCmd() *cobra.Command {
 	command.Flags().StringVar(&options.ClientOrderID, "client-order-id", "", "client order id")
 
 	return command
-}
-
-func validateBase(options baseOptions) error {
-	if options.Market == "" {
-		return errors.New("--market is required")
-	}
-
-	side := strings.ToLower(options.Side)
-	if side == "" {
-		return errors.New("--side is required")
-	}
-	if side != "buy" && side != "sell" {
-		return errors.New("--side must be one of: buy, sell")
-	}
-
-	return nil
 }

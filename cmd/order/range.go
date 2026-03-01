@@ -1,7 +1,6 @@
 package ordercmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -32,17 +31,17 @@ func newRangeCmd() *cobra.Command {
 			if err := validateBase(options.baseOptions); err != nil {
 				return err
 			}
-			if options.StartPrice <= 0 {
-				return errors.New("--start-price must be greater than 0")
+			if err := validatePositiveFloatFlag("--start-price", options.StartPrice); err != nil {
+				return err
 			}
-			if options.EndPrice <= 0 {
-				return errors.New("--end-price must be greater than 0")
+			if err := validatePositiveFloatFlag("--end-price", options.EndPrice); err != nil {
+				return err
 			}
-			if options.Step <= 0 {
-				return errors.New("--step must be greater than 0")
+			if err := validatePositiveFloatFlag("--step", options.Step); err != nil {
+				return err
 			}
-			if options.BaseAmount <= 0 {
-				return errors.New("--base-amount must be greater than 0")
+			if err := validatePositiveFloatFlag("--base-amount", options.BaseAmount); err != nil {
+				return err
 			}
 			if err := validateAmountMode(options.AmountMode); err != nil {
 				return err
@@ -85,13 +84,4 @@ func newRangeCmd() *cobra.Command {
 	command.Flags().BoolVar(&options.Confirm, "confirm", false, "confirm live batch placement")
 
 	return command
-}
-
-func validateAmountMode(mode string) error {
-	switch mode {
-	case "constant", "arithmetic", "geometric", "capped-geometric", "fibonacci", "custom-list":
-		return nil
-	default:
-		return errors.New("--amount-mode must be one of: constant, arithmetic, geometric, capped-geometric, fibonacci, custom-list")
-	}
 }

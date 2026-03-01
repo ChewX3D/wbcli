@@ -1,9 +1,12 @@
 package ordercmd
 
-import "github.com/spf13/cobra"
+import (
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
+	"github.com/spf13/cobra"
+)
 
 // NewCommand constructs the order command group.
-func NewCommand() *cobra.Command {
+func NewCommand(_ func() (*appcontainer.Application, error)) *cobra.Command {
 	orderCmd := &cobra.Command{
 		Use:   "order",
 		Short: "Place and manage orders",

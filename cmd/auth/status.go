@@ -3,17 +3,18 @@ package authcmd
 import (
 	"fmt"
 
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/spf13/cobra"
 )
 
-func newStatusCmd() *cobra.Command {
+func newStatusCmd(getApplication func() (*appcontainer.Application, error)) *cobra.Command {
 	return &cobra.Command{
 		Use:     "status",
 		Short:   "Show current auth status",
 		Example: "wbcli auth status",
 		RunE: func(command *cobra.Command, args []string) error {
-			return runWithServices(command, func(services *Services) error {
-				result, err := services.Status.Execute(command.Context())
+			return runWithApplication(command, getApplication, func(application *appcontainer.Application) error {
+				result, err := application.Auth.Status(command.Context())
 				if err != nil {
 					return err
 				}

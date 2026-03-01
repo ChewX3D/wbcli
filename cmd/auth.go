@@ -5,4 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAuthCmd() *cobra.Command { return authcmd.NewCommand() }
+func newAuthCmd(provider applicationProvider) *cobra.Command {
+	return authcmd.NewCommand(provider)
+}

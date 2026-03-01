@@ -12,6 +12,8 @@ const flagKeyVerbose = "verbose"
 var rootCmd = newRootCmd()
 
 func newRootCmd() *cobra.Command {
+	applicationProvider := newApplicationProvider()
+
 	root := &cobra.Command{
 		Use:   "wbcli",
 		Short: "A safe CLI for WhiteBIT trading workflows",
@@ -33,8 +35,8 @@ It provides safe command groups for auth credential management and order executi
 
 	root.PersistentFlags().BoolP(flagKeyVerbose, "v", false, "verbose logging")
 	root.AddCommand(newVersionCmd())
-	root.AddCommand(newAuthCmd())
-	root.AddCommand(newOrderCmd())
+	root.AddCommand(newAuthCmd(applicationProvider))
+	root.AddCommand(newOrderCmd(applicationProvider))
 
 	return root
 }

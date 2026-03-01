@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
 	clitools "github.com/ChewX3D/wbcli/internal/cli"
 	"github.com/spf13/cobra"
 )
 
-func newLoginCmd() *cobra.Command {
+func newLoginCmd(getApplication func() (*appcontainer.Application, error)) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "login",
 		Short: "Validate and store credentials from stdin",
@@ -33,8 +34,8 @@ func newLoginCmd() *cobra.Command {
 				return mapError(err)
 			}
 
-			return runWithServices(command, func(services *Services) error {
-				result, err := services.Login.Execute(command.Context(), authservice.LoginRequest{
+			return runWithApplication(command, getApplication, func(application *appcontainer.Application) error {
+				result, err := application.Auth.Login(command.Context(), authservice.LoginRequest{
 					APIKey:    credentials.APIKey,
 					APISecret: credentials.APISecret,
 				})

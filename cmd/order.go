@@ -5,4 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newOrderCmd() *cobra.Command { return ordercmd.NewCommand() }
+func newOrderCmd(provider applicationProvider) *cobra.Command {
+	return ordercmd.NewCommand(provider)
+}

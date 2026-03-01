@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	authcmd "github.com/ChewX3D/wbcli/cmd/auth"
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
@@ -127,7 +127,7 @@ func TestAuthLogoutWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
 
 	stdout, stderr, err := executeCommand("auth", "logout")
 	if err != nil {
@@ -151,7 +151,7 @@ func TestAuthLogoutIdempotentWhenLoggedOut(t *testing.T) {
 	credentialStore := &testCredentialStore{backendName: "os-keychain"}
 	sessionStore := &testSessionStore{}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
 
 	stdout, _, err := executeCommand("auth", "logout")
 	if err != nil {
@@ -174,7 +174,7 @@ func TestAuthStatusWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
 
 	stdout, _, err := executeCommand("auth", "status")
 	if err != nil {
@@ -195,7 +195,7 @@ func TestAuthStatusWorksWhenLoggedIn(t *testing.T) {
 }
 
 func TestAuthLoginUnavailableStoreReturnsActionableError(t *testing.T) {
-	withAuthServicesFactoryError(t, ports.ErrSecretStoreUnavailable)
+	withApplicationFactoryError(t, ports.ErrSecretStoreUnavailable)
 
 	_, _, err := executeCommandWithInput("api-key-1\nsecret-1\n", "auth", "login")
 	if err == nil {
@@ -219,7 +219,7 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 		),
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
 
 	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
@@ -246,7 +246,7 @@ func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
 		),
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
 
 	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
@@ -268,7 +268,7 @@ func TestAuthLoginInsufficientAccessIncludesProvidedEndpoint(t *testing.T) {
 		),
 	}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
 
 	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
@@ -286,7 +286,7 @@ func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 
-	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, nil))
+	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
 
 	_, _, err := executeCommand("auth", "logout")
 	if err == nil {
@@ -339,43 +339,43 @@ func TestOrderRangeStub(t *testing.T) {
 	}
 }
 
-func withAuthServicesFactory(t *testing.T, services *authcmd.Services) {
+func withApplicationFactory(t *testing.T, application *appcontainer.Application) {
 	t.Helper()
 
-	restore := authcmd.SetServicesFactoryForTest(func() (*authcmd.Services, error) {
-		return services, nil
+	restore := SetApplicationFactoryForTest(func() (*appcontainer.Application, error) {
+		return application, nil
 	})
 	t.Cleanup(restore)
 }
 
-func withAuthServicesFactoryError(t *testing.T, factoryErr error) {
+func withApplicationFactoryError(t *testing.T, factoryErr error) {
 	t.Helper()
 
-	restore := authcmd.SetServicesFactoryForTest(func() (*authcmd.Services, error) {
+	restore := SetApplicationFactoryForTest(func() (*appcontainer.Application, error) {
 		return nil, factoryErr
 	})
 	t.Cleanup(restore)
 }
 
-func testAuthServices(
+func testApplication(
 	credentialStore ports.CredentialStore,
 	sessionStore ports.SessionStore,
 	credentialVerifier ports.CredentialVerifier,
-) *authcmd.Services {
+) *appcontainer.Application {
 	if credentialVerifier == nil {
 		credentialVerifier = &testCredentialVerifier{}
 	}
 
-	return &authcmd.Services{
-		Login: authservice.NewLoginService(
+	return appcontainer.NewWithAuthServices(
+		authservice.NewLoginService(
 			credentialStore,
 			sessionStore,
 			testClock{now: time.Date(2026, 2, 28, 12, 0, 0, 0, time.UTC)},
 			credentialVerifier,
 		),
-		Logout: authservice.NewLogoutService(credentialStore, sessionStore),
-		Status: authservice.NewStatusService(sessionStore),
-	}
+		authservice.NewLogoutService(credentialStore, sessionStore),
+		authservice.NewStatusService(sessionStore),
+	)
 }
 
 type testCredentialStore struct {

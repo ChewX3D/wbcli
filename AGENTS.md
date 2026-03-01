@@ -131,6 +131,15 @@ Current adapter behavior (`internal/adapters/whitebit`):
   - do not add business methods like `Verify` to the transport client
   - business orchestration belongs to application services (for example `LoginService`) and their outbound adapters
 
+### Application Factory
+
+Current wiring model:
+
+- command groups use one shared application container per CLI process (`internal/app/application`)
+- root command creates a cached application provider and passes it into command groups
+- application container exposes use-case interfaces (for example `AuthUseCases`) rather than direct adapter dependencies
+- tests override runtime wiring via `cmd.SetApplicationFactoryForTest`
+
 ## Backlog And Todo Workflow
 
 ### Triage
@@ -314,6 +323,21 @@ Required implementation rules for day-to-day work:
   - extract shared behavior into small helpers when the same pattern appears 2+ times
   - keep one source of truth for validation and error mapping rules
   - in reviews, treat avoidable duplication as a blocking issue unless explicitly justified
+
+Authoritative DRY references (MANDATORY):
+
+- Original DRY framing by Dave Thomas and Andy Hunt:
+  - https://artima.com/intv/dry.html
+- Martin Fowler on code smells (duplicated code indicates deeper design issues):
+  - https://martinfowler.com/bliki/CodeSmell.html
+- Refactoring discipline for safe, incremental deduplication:
+  - https://refactoring.com/
+
+Rules derived from these references:
+
+- DRY is about duplicate knowledge/behavior, not blind token-level deduplication
+- remove duplication using small, tested refactors; avoid broad rewrites without safety nets
+- if duplicated knowledge is intentional (for isolation or risk control), document why duplication is acceptable
 
 ## Go Deep Knowledge (Official go.dev)
 
@@ -517,6 +541,7 @@ cmd/
 internal/
   domain/
   app/
+    application/
     services/
     ports/
   adapters/
@@ -541,6 +566,10 @@ What goes where:
   - application/use-case services (orchestration and policies)
   - this is the correct location for feature services (for example auth login service)
   - may depend on `internal/domain` and `internal/app/ports` only
+- `internal/app/application/`
+  - application container and factory wiring for command adapters
+  - exposes use-case interfaces grouped by feature areas (for example `AuthUseCases`)
+  - composes concrete adapters/services in one place for runtime and test overrides
 - `internal/app/ports/`
   - boundary interfaces for side effects needed by services
   - examples: `CredentialStore`, `SessionStore`, `CredentialVerifier`, `Clock`
@@ -568,6 +597,7 @@ Feature-oriented example for auth:
 ```text
 cmd/auth/login.go
 internal/domain/auth/credential.go
+internal/app/application/factory.go
 internal/app/services/auth/login.go
 internal/app/ports/auth.go
 internal/adapters/secretstore/keychain.go

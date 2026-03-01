@@ -3,11 +3,12 @@ package authcmd
 import (
 	"fmt"
 
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/spf13/cobra"
 )
 
 // NewCommand constructs the auth command group.
-func NewCommand() *cobra.Command {
+func NewCommand(getApplication func() (*appcontainer.Application, error)) *cobra.Command {
 	authCmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Manage authentication credentials",
@@ -21,9 +22,9 @@ func NewCommand() *cobra.Command {
 		},
 	}
 
-	authCmd.AddCommand(newLoginCmd())
-	authCmd.AddCommand(newLogoutCmd())
-	authCmd.AddCommand(newStatusCmd())
+	authCmd.AddCommand(newLoginCmd(getApplication))
+	authCmd.AddCommand(newLogoutCmd(getApplication))
+	authCmd.AddCommand(newStatusCmd(getApplication))
 
 	return authCmd
 }
