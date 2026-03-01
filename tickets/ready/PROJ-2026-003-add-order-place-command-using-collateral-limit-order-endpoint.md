@@ -18,6 +18,7 @@ Outcome:
 
 Acceptance Criteria:
 - [ ] Command supports required fields (`market`, `side`, `amount`, `price`, `expiration`) and optional flags.
+- [ ] `--side` accepts aliases: `buy|long` and `sell|short`.
 - [ ] `order place` always submits with `postOnly=true` (no CLI flag to disable).
 - [ ] Input validation blocks invalid combinations such as `rpi=true` with `ioc=true`.
 - [ ] Command reads credentials from single-session auth state and uses signed client adapter.
@@ -62,17 +63,20 @@ Alignment With Existing Code (Reuse-First):
 Implementation Notes For This Ticket:
 
 1. Keep current `order place` flags for MVP required fields and `client-order-id`.
-2. Force `postOnly=true` in use-case/adapters for every submission.
-3. Do not add `ioc`/`rpi` flags in this step; if introduced later, validate their conflict before request execution.
-4. Remove legacy `--profile` behavior from order commands to align with current single-session auth model.
-5. Add `--output table|json` and render normalized contract fields:
+2. Normalize side aliases at command/use-case boundary:
+   - `buy` and `long` map to transport `side=buy`
+   - `sell` and `short` map to transport `side=sell`
+3. Force `postOnly=true` in use-case/adapters for every submission.
+4. Do not add `ioc`/`rpi` flags in this step; if introduced later, validate their conflict before request execution.
+5. Remove legacy `--profile` behavior from order commands to align with current single-session auth model.
+6. Add `--output table|json` and render normalized contract fields:
    - `request_id`
    - `mode`
    - `orders_planned`
    - `orders_submitted`
    - `orders_failed`
    - `errors[]`
-6. Keep order endpoint tests unit-only using mocks/fakes; no live integration tests for order submission endpoint.
+7. Keep order endpoint tests unit-only using mocks/fakes; no live integration tests for order submission endpoint.
 
 Rollback Plan:
 1. Disable live submission behind `--dry-run-only` temporary mode.
@@ -84,3 +88,4 @@ Status Notes:
 - 2026-02-26: Promoted to Ready with explicit dependency ordering and acceptance checks.
 - 2026-02-28: Updated for single-session auth and safety policy (no order integration tests).
 - 2026-03-01: Added reuse-first alignment with current architecture, clarified `postOnly=true` requirement, and documented concrete implementation mapping to existing code.
+- 2026-03-01: Added `--side` alias requirement (`buy|long`, `sell|short`) and explicit normalization mapping for implementation.
