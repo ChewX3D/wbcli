@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -211,7 +212,9 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 		backendName: "os-keychain",
 	}
 	sessionStore := &testSessionStore{}
-	credentialVerifier := &testCredentialVerifier{err: ports.ErrCredentialVerifyUnauthorized}
+	credentialVerifier := &testCredentialVerifier{
+		err: fmt.Errorf("%w: status 401: invalid signature", ports.ErrCredentialVerifyUnauthorized),
+	}
 
 	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
 
@@ -221,6 +224,9 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "credentials are invalid") {
 		t.Fatalf("expected actionable auth-failed error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "invalid signature") {
+		t.Fatalf("expected underlying reason in message, got %v", err)
 	}
 }
 

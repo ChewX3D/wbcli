@@ -2,6 +2,8 @@ package authcmd
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
@@ -34,12 +36,62 @@ func mapError(err error) error {
 	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
 		return errors.New("os-keychain access denied; keychain is locked or access is restricted")
 	case errors.Is(err, ports.ErrCredentialVerifyUnauthorized):
-		return errors.New("whitebit credential verification failed: credentials are invalid (wrong public/secret key pair, disabled key, or signature/nonce rejected)")
+		return formatCredentialVerificationError(
+			"whitebit credential verification failed: credentials are invalid",
+			err,
+		)
 	case errors.Is(err, ports.ErrCredentialVerifyForbidden):
-		return errors.New("whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint /api/v4/collateral-account/hedge-mode")
+		return formatCredentialVerificationError(
+			"whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint /api/v4/collateral-account/hedge-mode",
+			err,
+		)
 	case errors.Is(err, ports.ErrCredentialVerifyUnavailable):
-		return errors.New("whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later")
+		return formatCredentialVerificationError(
+			"whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later",
+			err,
+		)
 	default:
 		return err
 	}
+}
+
+func formatCredentialVerificationError(baseMessage string, err error) error {
+	reason := extractCredentialVerificationReason(err)
+	if reason == "" {
+		return errors.New(baseMessage)
+	}
+
+	return fmt.Errorf("%s. reason: %s", baseMessage, reason)
+}
+
+func extractCredentialVerificationReason(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	reason := err.Error()
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return ""
+	}
+
+	prefixes := []string{
+		"verify credential: ",
+		"credential verification unauthorized: ",
+		"credential verification forbidden: ",
+		"credential verification unavailable: ",
+	}
+
+	for {
+		updated := reason
+		for _, prefix := range prefixes {
+			updated = strings.TrimPrefix(updated, prefix)
+		}
+		if updated == reason {
+			break
+		}
+		reason = updated
+	}
+
+	return strings.TrimSpace(reason)
 }
