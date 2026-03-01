@@ -230,6 +230,29 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 	}
 }
 
+func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
+	credentialStore := &testCredentialStore{
+		backendName: "os-keychain",
+	}
+	sessionStore := &testSessionStore{}
+	credentialVerifier := &testCredentialVerifier{
+		err: fmt.Errorf(
+			"%w: status 401: This API Key is not authorized to perform this action.: whitebit unauthorized",
+			ports.ErrCredentialVerifyUnauthorized,
+		),
+	}
+
+	withAuthServicesFactory(t, testAuthServices(credentialStore, sessionStore, credentialVerifier))
+
+	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "enable access to endpoint /api/v4/collateral-account/hedge-mode") {
+		t.Fatalf("expected endpoint access instruction, got %v", err)
+	}
+}
+
 func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	credentialStore := &testCredentialStore{
 		backendName: "os-keychain",

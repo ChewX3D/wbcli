@@ -11,6 +11,8 @@ import (
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
+const credentialVerificationEndpoint = "/api/v4/collateral-account/hedge-mode"
+
 func mapError(err error) error {
 	if err == nil {
 		return nil
@@ -36,13 +38,25 @@ func mapError(err error) error {
 	case errors.Is(err, ports.ErrSecretStorePermissionDenied):
 		return errors.New("os-keychain access denied; keychain is locked or access is restricted")
 	case errors.Is(err, ports.ErrCredentialVerifyUnauthorized):
+		if indicatesMissingEndpointAccess(err) {
+			return formatCredentialVerificationError(
+				fmt.Sprintf(
+					"whitebit credential verification failed: token permissions are insufficient; enable access to endpoint %s",
+					credentialVerificationEndpoint,
+				),
+				err,
+			)
+		}
 		return formatCredentialVerificationError(
 			"whitebit credential verification failed: credentials are invalid",
 			err,
 		)
 	case errors.Is(err, ports.ErrCredentialVerifyForbidden):
 		return formatCredentialVerificationError(
-			"whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint /api/v4/collateral-account/hedge-mode",
+			fmt.Sprintf(
+				"whitebit credential verification failed: credentials are valid, but token permissions are insufficient for endpoint %s",
+				credentialVerificationEndpoint,
+			),
 			err,
 		)
 	case errors.Is(err, ports.ErrCredentialVerifyUnavailable):
@@ -93,5 +107,23 @@ func extractCredentialVerificationReason(err error) string {
 		reason = updated
 	}
 
+	suffixes := []string{
+		": whitebit unauthorized",
+		": whitebit forbidden",
+	}
+	for _, suffix := range suffixes {
+		reason = strings.TrimSuffix(reason, suffix)
+	}
+
 	return strings.TrimSpace(reason)
+}
+
+func indicatesMissingEndpointAccess(err error) bool {
+	reason := strings.ToLower(extractCredentialVerificationReason(err))
+	if reason == "" {
+		return false
+	}
+
+	return strings.Contains(reason, "not authorized to perform this action") ||
+		strings.Contains(reason, "not authorised to perform this action")
 }
