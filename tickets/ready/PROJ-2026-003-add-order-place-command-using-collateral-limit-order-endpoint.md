@@ -18,13 +18,17 @@ Outcome:
 
 Acceptance Criteria:
 - [ ] Command supports required fields (`market`, `side`, `amount`, `price`) and optional flags.
-- [ ] `--side` accepts aliases: `buy|long` and `sell|short`.
+- [ ] `--side` accepts aliases: `buy|long` and `sell|short`, with case-insensitive matching.
 - [ ] Side alias normalization is performed in CLI command adapter files (`cmd/*`) before calling services; services receive canonical values only and do not normalize aliases.
 - [ ] `collateral order place` always submits with `postOnly=true` (no CLI flag to disable).
 - [ ] Command reads credentials from single-session auth state and uses signed client adapter.
 - [ ] Command path is `wbcli collateral order place` (not `wbcli order place`).
-- [ ] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete `BTC-PERP` examples for common flows.
+- [ ] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete examples with WhiteBIT-valid market values (for example `BTC_PERP`).
+- [ ] `--market` validation is non-empty only in this ticket (no additional market-format validation).
+- [ ] `--output` supports only `table|json` with default `table`.
+- [ ] `--client-order-id` is pass-through only with no strict validation in this ticket (and no strict validation planned).
 - [ ] Output contract includes `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]`.
+- [ ] Exit code is `0` on success and non-zero on validation/auth/API failures.
 - [ ] Unit tests cover successful placement and representative validation/auth failures; no integration tests for order submission endpoints.
 
 Risks:
@@ -77,7 +81,7 @@ Implementation Notes For This Ticket:
    - required/optional flags with meaning and constraints
    - side alias mapping (`buy|long`, `sell|short`)
    - note that `postOnly=true` is enforced
-   - include multiple concrete `BTC-PERP` examples (buy, sell, with `--client-order-id`, and `--output json`)
+   - include multiple concrete `BTC_PERP` examples (buy, sell, with `--client-order-id`, and `--output json`)
 8. Add `--output table|json` and render normalized contract fields:
    - `request_id`
    - `mode`
@@ -86,6 +90,15 @@ Implementation Notes For This Ticket:
    - `orders_failed`
    - `errors[]`
 9. Keep order endpoint tests unit-only using mocks/fakes; no live integration tests for order submission endpoint.
+10. CLI contract for this ticket:
+    - command: `wbcli collateral order place`
+    - required flags: `--market`, `--side`, `--amount`, `--price`
+    - optional flags: `--client-order-id`, `--output`
+    - disallowed flags for this ticket: `--profile`, `--expiration`, `--ioc`, `--rpi`, `--post-only`
+11. `--client-order-id` must be forwarded as-is (no normalization and no strict validation).
+12. Exit code behavior:
+    - success: `0`
+    - validation/auth/api/transport failure: non-zero
 
 Rollback Plan:
 1. Disable live submission behind `--dry-run-only` temporary mode.
@@ -98,5 +111,6 @@ Status Notes:
 - 2026-02-28: Updated for single-session auth and safety policy (no order integration tests).
 - 2026-03-01: Added reuse-first alignment with current architecture, clarified `postOnly=true` requirement, and documented concrete implementation mapping to existing code.
 - 2026-03-01: Added `--side` alias requirement (`buy|long`, `sell|short`) and explicit normalization mapping for implementation.
-- 2026-03-01: Updated command target to `wbcli collateral order place`, required CLI-layer side normalization only, and added mandatory exhaustive `--help` documentation with `BTC-PERP` examples.
+- 2026-03-01: Updated command target to `wbcli collateral order place`, required CLI-layer side normalization only, and added mandatory exhaustive `--help` documentation with `BTC_PERP` examples.
 - 2026-03-01: Simplified scope by removing `expiration` and removing `ioc/rpi` validation from this ticket.
+- 2026-03-01: Clarified contract details: case-insensitive side aliases, non-empty market validation only, `--output table|json` default `table`, pass-through `--client-order-id`, WhiteBIT-valid `BTC_PERP` help examples, and explicit exit code behavior.
