@@ -7,7 +7,7 @@ Status: Ready
 Owner: chewbaccalol
 Due Date: 2026-03-05
 Created: 2026-02-26
-Updated: 2026-03-01
+Updated: 2026-03-02
 Links: [CLI Design](../../docs/cli-design.md), [WhiteBIT Integration](../../docs/whitebit-integration.md)
 
 Problem:
@@ -24,11 +24,14 @@ Acceptance Criteria:
 - [ ] Command reads credentials from single-session auth state and uses signed client adapter.
 - [ ] Command path is `wbcli collateral order place` (not `wbcli order place`).
 - [ ] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete examples with WhiteBIT-valid market values (for example `BTC_PERP`).
-- [ ] `--market` validation is non-empty only in this ticket (no additional market-format validation).
+- [ ] CLI performs minimal local validation only (flag parsing, required fields, side-alias normalization); business/validation failures are handled by WhiteBIT API/domain errors.
 - [ ] `--output` supports only `table|json` with default `table`.
 - [ ] `--client-order-id` is pass-through only with no strict validation in this ticket (and no strict validation planned).
 - [ ] Output contract includes `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]`.
 - [ ] Exit code is `0` on success and non-zero on validation/auth/API failures.
+- [ ] Main error reason text is populated from domain/adapter error data (WhiteBIT response mapping) rather than duplicated CLI-specific reason synthesis.
+- [ ] Auth failures provide explicit guidance; insufficient-permission errors must include required endpoint path in message.
+- [ ] WhiteBIT API reason is shown safely (explicit but no secret/payload/signature leakage).
 - [ ] Unit tests cover successful placement and representative validation/auth failures; no integration tests for order submission endpoints.
 
 Risks:
@@ -36,7 +39,7 @@ Risks:
 - Output contract instability will break future UI or automation wrappers.
 
 Rollout Plan:
-1. Implement command parser and validator.
+1. Implement command parser + alias normalization with minimal local validation.
 2. Connect use-case to WhiteBIT adapter.
 3. Add table/json renderer support and tests.
 
@@ -99,6 +102,28 @@ Implementation Notes For This Ticket:
 12. Exit code behavior:
     - success: `0`
     - validation/auth/api/transport failure: non-zero
+13. Error handling policy:
+    - prefer WhiteBIT/domain error mapping as primary reason source
+    - CLI should add actionable context only (for example auth guidance) without replacing core reason
+    - explicit auth guidance is mandatory for not-logged-in and insufficient-permission scenarios
+    - never expose API secret, payload, or signature in error output
+
+Test Matrix (Unit-Only):
+
+| ID | Scenario | Input / Setup | Expected Result |
+|---|---|---|---|
+| T1 | Success path | Valid auth state + valid `BTC_PERP` order | Exit `0`; `orders_submitted=1`; `orders_failed=0`; output contract fields present |
+| T2 | Side alias long | `--side long` | CLI normalizes to canonical `buy`; request uses `side=buy` |
+| T3 | Side alias short | `--side short` | CLI normalizes to canonical `sell`; request uses `side=sell` |
+| T4 | Side alias case-insensitive | `--side LONG` / `--side Sell` | Normalization works identically to lowercase aliases |
+| T5 | postOnly enforced | Any valid command | Outbound request always has `postOnly=true` |
+| T6 | Missing auth state | Credential store returns `ErrCredentialNotFound` | Non-zero exit; explicit auth guidance (`run wbcli auth login first`) |
+| T7 | Invalid credentials | WhiteBIT adapter returns unauthorized with explicit reason | Non-zero exit; explicit reason shown safely |
+| T8 | Missing endpoint permission | WhiteBIT adapter returns insufficient-permission | Non-zero exit; message includes required endpoint path |
+| T9 | WhiteBIT validation/business failure | Adapter returns API validation/business error + message | Non-zero exit; API reason propagated safely from domain/adapter error |
+| T10 | Transport/unavailable failure | Adapter returns retryable transport error | Non-zero exit; explicit transient-failure message |
+| T11 | Output mode json | `--output json` | Valid JSON with `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]` |
+| T12 | Output mode table/default | `--output table` and default | Human-readable output; same semantic fields represented |
 
 Rollback Plan:
 1. Disable live submission behind `--dry-run-only` temporary mode.
@@ -114,3 +139,4 @@ Status Notes:
 - 2026-03-01: Updated command target to `wbcli collateral order place`, required CLI-layer side normalization only, and added mandatory exhaustive `--help` documentation with `BTC_PERP` examples.
 - 2026-03-01: Simplified scope by removing `expiration` and removing `ioc/rpi` validation from this ticket.
 - 2026-03-01: Clarified contract details: case-insensitive side aliases, non-empty market validation only, `--output table|json` default `table`, pass-through `--client-order-id`, WhiteBIT-valid `BTC_PERP` help examples, and explicit exit code behavior.
+- 2026-03-02: Switched to API-first validation/error policy, required domain-error-driven reason propagation, strengthened auth guidance expectations, and added an explicit unit-test matrix.
