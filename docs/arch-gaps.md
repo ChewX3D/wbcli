@@ -1,8 +1,8 @@
 # Architectural Gap Analysis
 
-Reference document for planned refactoring. Each finding describes a violation,
-its severity, and the fix direction. Implementation order is listed at the bottom.
-Resolved findings are moved to the bottom for reference.
+Reference document for planned refactoring. Each finding describes what is wrong,
+why it matters, and how to fix it. Open findings are at the top. Resolved findings
+are at the bottom for reference.
 
 Severity scale: **high** | **medium** | **low**
 
@@ -10,8 +10,13 @@ Severity scale: **high** | **medium** | **low**
 
 ## Dependency Direction Violations
 
-### GAP-003 — `cmd/auth/errors.go` imports `authservice.ErrNotLoggedIn` from service package
+### GAP-003 — `cmd/auth/errors.go` imports an error from the service package instead of ports
 **Severity:** low
+
+**What is wrong:**
+
+`cmd/auth/errors.go` imports the auth service package to use one named error variable —
+`ErrNotLoggedIn`:
 
 ```go
 // cmd/auth/errors.go
@@ -20,17 +25,31 @@ import authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
 {match: authservice.ErrNotLoggedIn, message: "..."},
 ```
 
-`ErrNotLoggedIn` is a sentinel the cmd layer needs to handle in user-facing messages.
-Sentinels at this boundary belong in `internal/app/ports/auth.go` alongside
-`ErrCredentialNotFound` and friends — not inside the service implementation package.
+**Why it matters:**
 
-**Fix:** Move `ErrNotLoggedIn` declaration from `internal/app/services/auth` to
-`internal/app/ports/auth.go`. Update service and cmd imports accordingly.
+The command layer (`cmd/`) should only depend on the boundary layer (`ports/`), never
+on service internals. Right now it reaches into the service package just to grab this
+one error. If the service package is ever renamed, reorganized, or replaced, the command
+code breaks for no reason.
+
+A similar error — `ErrCredentialNotFound` — already lives in `internal/app/ports/auth.go`
+where it belongs. `ErrNotLoggedIn` should sit right next to it.
+
+**Fix:**
+
+Move the `ErrNotLoggedIn` declaration from `internal/app/services/auth/errors.go` to
+`internal/app/ports/auth.go`. Update all imports in the service and cmd packages to
+point to `ports` instead.
 
 ---
 
-### GAP-004 — `SystemClock` concrete type lives in `internal/app/services/auth/clock.go`
+### GAP-004 — `SystemClock` lives in the service package instead of adapters
 **Severity:** low
+
+**What is wrong:**
+
+`SystemClock` is a concrete type that wraps `time.Now()`. It lives inside the auth
+service package:
 
 ```go
 // internal/app/services/auth/clock.go
@@ -41,24 +60,36 @@ type SystemClock struct{}
 func (SystemClock) Now() time.Time { return time.Now() }
 ```
 
-`SystemClock` is a concrete implementation of `ports.Clock`. Concrete implementations
-of port interfaces belong in `internal/adapters/`, not in a service package.
-The side effect is visible in the composition root:
+**Why it matters:**
+
+`SystemClock` implements the `ports.Clock` interface. All concrete implementations of
+port interfaces belong in `internal/adapters/`, not in service packages. Services should
+only know about the interface, not own the real implementation.
+
+This shows up in the composition root where it has to reach into the service package
+for an infrastructure type:
 
 ```go
-// factory.go — reaching into a service package for a concrete infrastructure type
+// factory.go
 clock := authservice.SystemClock{}
 ```
 
-**Fix:** Move `SystemClock` to `internal/adapters/clock/system_clock.go`. Update
-`factory.go` (or its replacement in cmd) to import from the new adapter path.
+**Fix:**
+
+Move `SystemClock` to `internal/adapters/clock/system_clock.go`. Update `factory.go`
+to import from the new adapter path.
 
 ---
 
 ## WhiteBIT Transport Client Mirror Rule Violations
 
-### GAP-005 — `PostOnly + IOC` conflict check is a business rule in the transport client
+### GAP-005 — `PostOnly + IOC` conflict check is a business rule inside the transport client
 **Severity:** medium
+
+**What is wrong:**
+
+The transport client validates that `PostOnly` and `IOC` cannot both be `true` at the
+same time:
 
 ```go
 // internal/adapters/whitebit/collateral.go — CollateralLimitOrderRequest.validate()
@@ -67,94 +98,120 @@ if request.PostOnly != nil && request.IOC != nil && *request.PostOnly && *reques
 }
 ```
 
-The transport client mirror rule states the client must be a strict mirror of API
-documentation only — no business decisions. The `PostOnly+IOC` mutual exclusion is an
-order-semantics constraint, not a transport field shape constraint. Knowing that these two
-flags cannot coexist is business/domain knowledge.
+**Why it matters:**
 
-The remaining validation in `validate()` (non-empty `Market`, `Amount`, `Price`) is
-acceptable as a transport-level guard against malformed HTTP requests. The enum validation
-(`ErrInvalidOrderSide`, `ErrInvalidPositionSide`) is borderline — it is currently
-called only from `CollateralOrderExecutorAdapter` which already receives typed constants,
-so in practice it is a no-op guard.
+The transport client should be a strict mirror of the WhiteBIT API — it sends fields
+and reads responses, nothing more. Knowing that PostOnly and IOC are mutually exclusive
+is a trading rule (business knowledge), not a transport shape check.
 
-**Fix:** Remove `ErrPostOnlyIOCConflict` check from `CollateralLimitOrderRequest.validate()`.
-Move the constraint check into `CollateralOrderExecutorAdapter.PlaceCollateralLimitOrder`
-or into the collateral service before calling the adapter.
+Other checks in `validate()` — like requiring non-empty `Market`, `Amount`, `Price` —
+are acceptable because they prevent malformed HTTP requests. The PostOnly+IOC rule is
+different: it enforces order semantics, which belongs in the service or adapter layer.
+
+**Fix:**
+
+Remove the `ErrPostOnlyIOCConflict` check from `CollateralLimitOrderRequest.validate()`.
+Move it into `CollateralOrderExecutorAdapter.PlaceCollateralLimitOrder` or into the
+collateral service.
 
 ---
 
-### GAP-006 — `PlaceCollateralBulkLimitOrder` is orphaned dead API surface
+### GAP-006 — `PlaceCollateralBulkLimitOrder` exists but nothing uses it
 **Severity:** medium
 
-`PlaceCollateralBulkLimitOrder` exists on `*Client` and is covered by tests, but:
+**What is wrong:**
+
+The transport client has a `PlaceCollateralBulkLimitOrder` method with tests, but:
 
 - no port interface method exists for bulk orders
-- no `CollateralOrderExecutorAdapter` method wraps it
-- no service or command uses it
+- no adapter method wraps it
+- no service or command calls it
 
-The mirror rule says "nothing more and nothing less than what the API documents".
-An unconnected transport method with no product path violates this: it adds maintenance
-surface for a feature that does not exist in the product yet.
+**Why it matters:**
 
-**Fix:** Either fully wire it up (add port method → adapter method → service → command),
-or remove the transport method and its tests until the feature is planned. Do not leave
-partial vertical slices dangling at the transport layer.
+The mirror rule says the client should have "nothing more and nothing less" than what
+the product needs from the API. An unused transport method adds maintenance cost for
+a feature that does not exist yet. Every time the client changes, this method and its
+tests have to be kept in sync even though nothing uses them.
+
+**Fix:**
+
+Either wire it up fully (port method, adapter method, service, command) or remove it
+until the feature is planned. Do not leave half-built vertical slices at the transport
+layer.
 
 ---
 
 ## DRY Violations
 
-### GAP-008 — `boolRef` helper duplicated across service packages
+### GAP-008 — `boolRef` helper is copy-pasted across two service packages
 **Severity:** low
+
+**What is wrong:**
+
+The same helper function exists in two places:
 
 ```go
 // internal/app/services/auth/login.go
-// internal/app/services/collateral/place_order.go — identical in both
+// internal/app/services/collateral/place_order.go — identical copy
 func boolRef(value bool) *bool {
     allocated := value
     return &allocated
 }
 ```
 
-**Fix:** Extract to a shared internal utility. Options:
-- `internal/ptrutil/ptrutil.go` (preferred, explicit package)
-- or inline in a shared `internal/app/services/util.go`
+**Why it matters:**
+
+Duplicated code means two places to update if the pattern changes, and two places
+where bugs can hide independently.
+
+**Fix:**
+
+Extract to a shared utility, for example `internal/ptrutil/ptrutil.go`.
 
 ---
 
 ## Concurrency Safety
 
-### GAP-009 — `applicationFactory` package-level global not mutex-protected
+### GAP-009 — `applicationFactory` global variable is not safe for parallel tests
 **Severity:** low
+
+**What is wrong:**
+
+The application factory is stored in a package-level global variable:
 
 ```go
 // cmd/application_runtime.go
 var applicationFactory = appcontainer.NewDefault
 ```
 
-`SetApplicationFactoryForTest` replaces this global without a lock. Safe for sequential
-tests today, but will fail `go test -race ./...` if tests ever run in parallel.
+`SetApplicationFactoryForTest` replaces this global without any locking.
 
-**Fix:** Remove the global. Pass the factory as a parameter into `newRootCmd`. This is
-consistent with `NewRootCmdForTest()` which already passes a factory at construction.
-The `NewDefault` wiring (after GAP-001 fix) would live directly in `main.go` or
-`cmd/application_runtime.go` and be passed in, never stored as a mutable global.
+**Why it matters:**
+
+This works today because tests run sequentially. But if tests ever run in parallel
+(for example with `go test -race ./...`), two tests replacing the same global at the
+same time is a data race. The race detector will flag it.
+
+**Fix:**
+
+Remove the global. Pass the factory as a parameter into `newRootCmd`.
+`NewRootCmdForTest()` already accepts a factory at construction — make the production
+path work the same way. The `NewDefault` wiring lives in `main.go` and gets passed in,
+never stored as a mutable global.
 
 ---
 
 ## Implementation Order
 
-Fixes are ordered by impact and dependency between findings:
-
 | Order | Finding | Reason |
 |-------|---------|--------|
 | 1 | GAP-009 | Remove mutable global; pass factory as parameter |
-| 2 | GAP-003 | Promote `ErrNotLoggedIn` to ports; small, isolated change |
-| 3 | GAP-005 | Move `PostOnly+IOC` rule out of transport client |
-| 4 | GAP-006 | Decide: wire bulk orders fully or remove dead surface |
+| 2 | GAP-003 | Move `ErrNotLoggedIn` to ports; small isolated change |
+| 3 | GAP-005 | Move PostOnly+IOC rule out of transport client |
+| 4 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
 | 5 | GAP-004 | Move `SystemClock` to adapters |
-| 6 | GAP-008 | Extract `boolRef` to shared util |
+| 6 | GAP-008 | Extract `boolRef` to shared utility |
 
 ---
 
@@ -173,51 +230,30 @@ The remaining constructors (`New`, `NewWithUseCases`, `NewWithAuthServices`,
 
 **Decision:** Keep `NewDefault()` in `factory.go`. `internal/app/application/` is the
 one package inside `internal/` that is explicitly permitted to import concrete adapters,
-because it IS the composition root. This exception must be stated in CLAUDE.md:
-
-> `internal/app/application/` — composition root; the only package inside `internal/`
-> permitted to import concrete adapter packages; wires adapters into services for the
-> runtime application container.
+because it IS the composition root.
 
 ---
 
-### GAP-002 — `cmd/order/errors.go` imports `internal/adapters/whitebit` directly
+### GAP-002 — `cmd/order/errors.go` imported WhiteBIT adapter directly
 **Severity:** ~~high~~ — **resolved** (commit `c8f0b0f`)
 
-`cmd/order/errors.go` imported the WhiteBIT adapter package to check what kind of error
-came back from a failed order:
-
-```go
-// cmd/order/errors.go (before fix)
-import "github.com/ChewX3D/wbcli/internal/adapters/whitebit"
-
-case errors.Is(err, whitebit.ErrForbidden):
-case errors.Is(err, whitebit.ErrUnauthorized):
-```
-
-The problem: the command layer was directly reading WhiteBIT-specific error values.
-If the adapter is ever swapped out, renamed, or wrapped behind a different backend,
-this import breaks and the cmd code has to change — even though the command itself
-has nothing to do with HTTP or WhiteBIT internals.
+`cmd/order/errors.go` imported the WhiteBIT adapter package to check error types from
+a failed order. The command layer was reading WhiteBIT-specific error values — if the
+adapter is ever replaced, the command code breaks for no reason.
 
 **Resolution:** Introduced unified `ports.APIError` type. The WhiteBIT adapter now
-translates transport errors into `*ports.APIError` at the boundary via `buildAPIError`.
-`cmd/order/errors.go` checks `errors.As(err, &apiErr)` — no adapter import needed.
+converts transport errors into `*ports.APIError` at the boundary. The command layer
+checks `errors.As(err, &apiErr)` — no adapter import needed.
 
 ---
 
-### GAP-007 — `indicatesMissingEndpointAccess` and `extractErrorDetail` duplicated
+### GAP-007 — Error classification helpers were copy-pasted across two packages
 **Severity:** ~~high~~ — **resolved** as part of GAP-002 fix (commit `c8f0b0f`)
 
-Identical string-scraping logic appeared in two packages:
+The same string-matching logic (`indicatesMissingEndpointAccess`, `extractErrorDetail`)
+existed in both `cmd/order/errors.go` and `internal/adapters/whitebit/credential_verifier.go`.
+The duplication happened because `cmd/order` bypassed the port boundary and had to
+re-implement classification that the adapter already did.
 
-- `cmd/order/errors.go`
-- `internal/adapters/whitebit/credential_verifier.go`
-
-Both scraped `"not authorized to perform this action"` from error message strings to
-classify missing API endpoint permission errors. The duplication was a direct consequence
-of GAP-002: because `cmd/order` bypassed the port abstraction, it had to re-implement
-classification already done inside the adapter.
-
-**Resolution:** Fixing GAP-002 eliminated this automatically. The helpers now live only
-in `internal/adapters/whitebit/apierror.go`.
+**Resolution:** Fixing GAP-002 eliminated this. The helpers now live only in
+`internal/adapters/whitebit/apierror.go`.
