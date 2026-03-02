@@ -8,11 +8,96 @@ Severity scale: **high** | **medium** | **low**
 
 ---
 
-## Dependency Direction Violations
+## WhiteBIT Transport Client Mirror Rule Violations
+
+### GAP-010 — Missing `rpi` field on `CollateralLimitOrderRequest`
+**Severity:** low
+
+**What is wrong:**
+
+The WhiteBIT API documents an `rpi` (boolean, optional) parameter on both the
+collateral limit order and bulk limit order endpoints. Our `CollateralLimitOrderRequest`
+struct does not have this field.
+
+The `ErrPostOnlyIOCConflict` validation is also incomplete — API error code 37 covers
+`ioc=true + postOnly=true` AND `ioc=true + rpi=true`, but without the `rpi` field we
+can't validate the second combination.
+
+**Fix:**
+
+Add `RPI *bool json:"rpi,omitempty"` to `CollateralLimitOrderRequest`. Add a client-side
+validation for `ioc+rpi` alongside the existing `ioc+postOnly` check.
 
 ---
 
-## WhiteBIT Transport Client Mirror Rule Violations
+### GAP-011 — Request envelope does not send `nonceWindow`
+**Severity:** medium
+
+**What is wrong:**
+
+The official WhiteBIT Go SDK (`whitebit-exchange/go-sdk/options.go`) sends
+`nonceWindow: true` by default in every authenticated request:
+
+```go
+// Official SDK — options.go
+type AuthParams struct {
+    Request     string `json:"request"`
+    Nonce       int64  `json:"nonce"`
+    NonceWindow bool   `json:"nonceWindow"`
+}
+
+func NewAuthParams(url string) AuthParams {
+    return AuthParams{Nonce: time.Now().UnixMilli(), NonceWindow: true, Request: url}
+}
+```
+
+Our `privateEnvelope` only sends `request` and `nonce` — no `nonceWindow` field.
+
+**Why it matters:**
+
+Without `nonceWindow: true`, the API uses strict monotonic nonce ordering — each request
+must have a nonce higher than the previous one. With `nonceWindow: true`, the API
+accepts any nonce within ±5 seconds of server time and only checks uniqueness. The
+windowed mode is more resilient to clock drift and concurrent requests.
+
+**Fix:**
+
+Add `NonceWindow bool json:"nonceWindow"` to `privateEnvelope` and set it to `true`
+in `nextPrivateEnvelope`.
+
+---
+
+### GAP-012 — Error response `code` field not included in error details
+**Severity:** low
+
+**What is wrong:**
+
+The WhiteBIT API returns structured error responses with a numeric `code` field that
+has specific meaning per endpoint:
+
+```json
+{"code": 37, "message": "Validation failed", "errors": {"ioc": ["..."]}}
+```
+
+Documented codes for the limit order endpoint: `30` (default), `31` (market), `32`
+(amount), `33` (price), `36` (clientOrderId), `37` (ioc+postOnly/rpi).
+
+Our `extractErrorMessage` in `client.go` parses `message` and `errors` but ignores the
+`code` field. The numeric code never reaches the user or the error detail string.
+
+**Why it matters:**
+
+The `code` gives precise context about what went wrong. The `message` field is often
+generic ("Validation failed") while `code` tells you exactly which validation rule
+fired. Including it in the error detail string makes errors more actionable.
+
+**Fix:**
+
+In `extractErrorMessage`, read the `code` field from the JSON response and prepend it
+to the returned message string (e.g. `"code 37: Validation failed: ioc: ..."`). No new
+struct field needed — just include it in the text that already flows into `APIError.Details`.
+
+---
 
 ### GAP-006 — `PlaceCollateralBulkLimitOrder` exists but nothing uses it
 **Severity:** medium
@@ -104,9 +189,12 @@ never stored as a mutable global.
 
 | Order | Finding | Reason |
 |-------|---------|--------|
-| 1 | GAP-009 | Remove mutable global; pass factory as parameter |
-| 2 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
-| 3 | GAP-008 | Extract `boolRef` to shared utility |
+| 1 | GAP-011 | Add `nonceWindow: true` to match official SDK behavior |
+| 2 | GAP-010 | Add missing `rpi` field and complete ioc+rpi validation |
+| 3 | GAP-012 | Include error `code` in detail string for actionable errors |
+| 4 | GAP-009 | Remove mutable global; pass factory as parameter |
+| 5 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
+| 6 | GAP-008 | Extract `boolRef` to shared utility |
 
 ---
 
