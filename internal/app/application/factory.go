@@ -8,6 +8,7 @@ import (
 	"github.com/ChewX3D/wbcli/internal/adapters/secretstore"
 	"github.com/ChewX3D/wbcli/internal/adapters/whitebit"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
+	collateralservice "github.com/ChewX3D/wbcli/internal/app/services/collateral"
 )
 
 // AuthUseCases defines auth operations exposed to command adapters.
@@ -17,9 +18,15 @@ type AuthUseCases interface {
 	Status(ctx context.Context) (authservice.StatusResult, error)
 }
 
+// CollateralUseCases defines collateral operations exposed to command adapters.
+type CollateralUseCases interface {
+	PlaceOrder(ctx context.Context, request collateralservice.PlaceOrderRequest) (collateralservice.PlaceOrderResult, error)
+}
+
 // Application holds use-case interfaces used by CLI command adapters.
 type Application struct {
-	Auth AuthUseCases
+	Auth       AuthUseCases
+	Collateral CollateralUseCases
 }
 
 type authUseCases struct {
@@ -28,9 +35,21 @@ type authUseCases struct {
 	status *authservice.StatusService
 }
 
+type collateralUseCases struct {
+	placeOrder *collateralservice.PlaceOrderService
+}
+
 // New constructs application container from prepared use-case interfaces.
 func New(auth AuthUseCases) *Application {
 	return &Application{Auth: auth}
+}
+
+// NewWithUseCases constructs application container from prepared use-case interfaces.
+func NewWithUseCases(auth AuthUseCases, collateral CollateralUseCases) *Application {
+	return &Application{
+		Auth:       auth,
+		Collateral: collateral,
+	}
 }
 
 // NewWithAuthServices constructs application container from concrete auth services.
@@ -39,10 +58,26 @@ func NewWithAuthServices(
 	logout *authservice.LogoutService,
 	status *authservice.StatusService,
 ) *Application {
-	return New(&authUseCases{
+	return NewWithUseCases(&authUseCases{
 		login:  login,
 		logout: logout,
 		status: status,
+	}, nil)
+}
+
+// NewWithServices constructs application container from concrete auth and collateral services.
+func NewWithServices(
+	login *authservice.LoginService,
+	logout *authservice.LogoutService,
+	status *authservice.StatusService,
+	placeOrder *collateralservice.PlaceOrderService,
+) *Application {
+	return NewWithUseCases(&authUseCases{
+		login:  login,
+		logout: logout,
+		status: status,
+	}, &collateralUseCases{
+		placeOrder: placeOrder,
 	})
 }
 
@@ -55,12 +90,14 @@ func NewDefault() (*Application, error) {
 
 	credentialStore := secretstore.NewOSKeychainStore()
 	credentialVerifier := whitebit.NewDefaultCredentialVerifierAdapter()
+	collateralOrderExecutor := whitebit.NewDefaultCollateralOrderExecutorAdapter()
 	clock := authservice.SystemClock{}
 
-	return NewWithAuthServices(
+	return NewWithServices(
 		authservice.NewLoginService(credentialStore, sessionStore, clock, credentialVerifier),
 		authservice.NewLogoutService(credentialStore, sessionStore),
 		authservice.NewStatusService(sessionStore),
+		collateralservice.NewPlaceOrderService(credentialStore, collateralOrderExecutor, clock),
 	), nil
 }
 
@@ -74,4 +111,11 @@ func (useCases *authUseCases) Logout(ctx context.Context) (authservice.LogoutRes
 
 func (useCases *authUseCases) Status(ctx context.Context) (authservice.StatusResult, error) {
 	return useCases.status.Execute(ctx)
+}
+
+func (useCases *collateralUseCases) PlaceOrder(
+	ctx context.Context,
+	request collateralservice.PlaceOrderRequest,
+) (collateralservice.PlaceOrderResult, error) {
+	return useCases.placeOrder.Execute(ctx, request)
 }

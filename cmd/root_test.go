@@ -3,13 +3,17 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/ChewX3D/wbcli/internal/adapters/whitebit"
 	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
+	collateralservice "github.com/ChewX3D/wbcli/internal/app/services/collateral"
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
@@ -52,8 +56,8 @@ func TestRootHelpShowsMainGroups(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !strings.Contains(stdout, "auth") || !strings.Contains(stdout, "order") {
-		t.Fatalf("expected auth and order in help output, got: %q", stdout)
+	if !strings.Contains(stdout, "auth") || !strings.Contains(stdout, "collateral") {
+		t.Fatalf("expected auth and collateral in help output, got: %q", stdout)
 	}
 
 	if stderr != "" {
@@ -297,30 +301,170 @@ func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	}
 }
 
-func TestOrderPlaceStub(t *testing.T) {
+func TestLegacyOrderRootCommandRemoved(t *testing.T) {
+	_, _, err := executeCommand("order")
+	if err == nil {
+		t.Fatalf("expected unknown command error for removed root order command")
+	}
+	if !strings.Contains(err.Error(), "unknown command \"order\"") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCollateralOrderPlaceSuccessTableOutput(t *testing.T) {
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
+	placeUseCase := &testCollateralUseCases{
+		result: collateralservice.PlaceOrderResult{
+			RequestID:       "order-123",
+			Mode:            "single",
+			OrdersPlanned:   1,
+			OrdersSubmitted: 1,
+			OrdersFailed:    0,
+			Errors:          []string{},
+		},
+	}
+
+	application := testApplication(credentialStore, sessionStore, nil)
+	application.Collateral = placeUseCase
+	withApplicationFactory(t, application)
+
 	stdout, _, err := executeCommand(
-		"order", "place",
-		"--profile", "default",
+		"collateral", "order", "place",
 		"--market", "BTC_PERP",
-		"--side", "buy",
+		"--side", "long",
 		"--amount", "0.01",
 		"--price", "50000",
-		"--expiration", "0",
-		"--client-order-id", "my-order-001",
+		"--client-order-id", "bot-001",
+	)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !strings.Contains(stdout, "request_id=order-123") {
+		t.Fatalf("expected request_id in table output, got: %q", stdout)
+	}
+	if placeUseCase.lastRequest.Side != "buy" {
+		t.Fatalf("expected side alias normalization to buy, got %q", placeUseCase.lastRequest.Side)
+	}
+	if placeUseCase.lastRequest.ClientOrderID != "bot-001" {
+		t.Fatalf("expected client order id pass-through, got %q", placeUseCase.lastRequest.ClientOrderID)
+	}
+}
+
+func TestCollateralOrderPlaceSuccessJSONOutput(t *testing.T) {
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
+	placeUseCase := &testCollateralUseCases{
+		result: collateralservice.PlaceOrderResult{
+			RequestID:       "order-456",
+			Mode:            "single",
+			OrdersPlanned:   1,
+			OrdersSubmitted: 1,
+			OrdersFailed:    0,
+			Errors:          []string{},
+		},
+	}
+
+	application := testApplication(credentialStore, sessionStore, nil)
+	application.Collateral = placeUseCase
+	withApplicationFactory(t, application)
+
+	stdout, _, err := executeCommand(
+		"collateral", "order", "place",
+		"--market", "BTC_PERP",
+		"--side", "sell",
+		"--amount", "0.01",
+		"--price", "50000",
+		"--output", "json",
 	)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !strings.Contains(stdout, "not implemented yet") {
-		t.Fatalf("expected stub output, got: %q", stdout)
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
+		t.Fatalf("expected valid json output, got error: %v", err)
+	}
+	if payload["request_id"] != "order-456" {
+		t.Fatalf("unexpected request_id: %v", payload["request_id"])
+	}
+	if payload["mode"] != "single" {
+		t.Fatalf("unexpected mode: %v", payload["mode"])
 	}
 }
 
-func TestOrderRangeStub(t *testing.T) {
+func TestCollateralOrderPlaceValidationFailure(t *testing.T) {
+	_, _, err := executeCommand(
+		"collateral", "order", "place",
+		"--market", "BTC_PERP",
+		"--side", "hold",
+		"--amount", "0.01",
+		"--price", "50000",
+	)
+	if err == nil {
+		t.Fatalf("expected validation error")
+	}
+	if !strings.Contains(err.Error(), "--side must be one of: buy, long, sell, short") {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+}
+
+func TestCollateralOrderPlaceNotLoggedInErrorMapping(t *testing.T) {
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
+	placeUseCase := &testCollateralUseCases{err: ports.ErrCredentialNotFound}
+
+	application := testApplication(credentialStore, sessionStore, nil)
+	application.Collateral = placeUseCase
+	withApplicationFactory(t, application)
+
+	_, _, err := executeCommand(
+		"collateral", "order", "place",
+		"--market", "BTC_PERP",
+		"--side", "buy",
+		"--amount", "0.01",
+		"--price", "50000",
+	)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "not logged in; run wbcli auth login first") {
+		t.Fatalf("unexpected auth guidance error: %v", err)
+	}
+}
+
+func TestCollateralOrderPlaceInsufficientPermissionErrorMapping(t *testing.T) {
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
+	placeUseCase := &testCollateralUseCases{
+		err: fmt.Errorf("whitebit api auth error: status 403: This API Key is not authorized to perform this action.: %w", whitebit.ErrForbidden),
+	}
+
+	application := testApplication(credentialStore, sessionStore, nil)
+	application.Collateral = placeUseCase
+	withApplicationFactory(t, application)
+
+	_, _, err := executeCommand(
+		"collateral", "order", "place",
+		"--market", "BTC_PERP",
+		"--side", "buy",
+		"--amount", "0.01",
+		"--price", "50000",
+	)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "enable access to endpoint /api/v4/order/collateral/limit") {
+		t.Fatalf("expected endpoint guidance in error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "not authorized to perform this action") {
+		t.Fatalf("expected api reason detail in error, got %v", err)
+	}
+}
+
+func TestCollateralOrderRangeStub(t *testing.T) {
 	stdout, _, err := executeCommand(
-		"order", "range",
-		"--profile", "default",
+		"collateral", "order", "range",
 		"--market", "BTC_PERP",
 		"--side", "buy",
 		"--start-price", "49000",
@@ -376,6 +520,24 @@ func testApplication(
 		authservice.NewLogoutService(credentialStore, sessionStore),
 		authservice.NewStatusService(sessionStore),
 	)
+}
+
+type testCollateralUseCases struct {
+	result      collateralservice.PlaceOrderResult
+	err         error
+	lastRequest collateralservice.PlaceOrderRequest
+}
+
+func (useCases *testCollateralUseCases) PlaceOrder(
+	_ context.Context,
+	request collateralservice.PlaceOrderRequest,
+) (collateralservice.PlaceOrderResult, error) {
+	useCases.lastRequest = request
+	if useCases.err != nil {
+		return collateralservice.PlaceOrderResult{}, useCases.err
+	}
+
+	return useCases.result, nil
 }
 
 type testCredentialStore struct {

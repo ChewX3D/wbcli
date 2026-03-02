@@ -49,8 +49,7 @@ func newRangeCmd() *cobra.Command {
 
 			_, err := fmt.Fprintf(
 				command.OutOrStdout(),
-				"wbcli order range is not implemented yet (profile=%s market=%s side=%s start=%g end=%g step=%g amount-mode=%s base-amount=%g dry-run=%t confirm=%t)\n",
-				options.Profile,
+				"wbcli collateral order range is not implemented yet (market=%s side=%s start=%g end=%g step=%g amount-mode=%s base-amount=%g dry-run=%t confirm=%t)\n",
 				options.Market,
 				options.Side,
 				options.StartPrice,

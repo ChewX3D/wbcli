@@ -6,7 +6,7 @@ import (
 )
 
 // NewCommand constructs the order command group.
-func NewCommand(_ func() (*appcontainer.Application, error)) *cobra.Command {
+func NewCommand(getApplication func() (*appcontainer.Application, error)) *cobra.Command {
 	orderCmd := &cobra.Command{
 		Use:   "order",
 		Short: "Place and manage orders",
@@ -16,20 +16,18 @@ func NewCommand(_ func() (*appcontainer.Application, error)) *cobra.Command {
 		},
 	}
 
-	orderCmd.AddCommand(newPlaceCmd())
+	orderCmd.AddCommand(newPlaceCmd(getApplication))
 	orderCmd.AddCommand(newRangeCmd())
 
 	return orderCmd
 }
 
 type baseOptions struct {
-	Profile string
-	Market  string
-	Side    string
+	Market string
+	Side   string
 }
 
 func addBaseFlags(command *cobra.Command, options *baseOptions) {
-	command.Flags().StringVar(&options.Profile, "profile", "default", "credential profile name")
 	command.Flags().StringVar(&options.Market, "market", "", "whitebit market pair (for example BTC_PERP)")
-	command.Flags().StringVar(&options.Side, "side", "", "order side: buy or sell")
+	command.Flags().StringVar(&options.Side, "side", "", "order side: buy|long or sell|short")
 }

@@ -34,19 +34,46 @@ func validateNonNegativeInt64Flag(flagName string, value int64) error {
 }
 
 func validateBase(options baseOptions) error {
-	if options.Market == "" {
+	if strings.TrimSpace(options.Market) == "" {
 		return errors.New("--market is required")
 	}
 
-	side := strings.ToLower(options.Side)
+	side := strings.TrimSpace(options.Side)
 	if side == "" {
 		return errors.New("--side is required")
 	}
-	if side != "buy" && side != "sell" {
-		return errors.New("--side must be one of: buy, sell")
+
+	return nil
+}
+
+func normalizeSideAlias(side string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(side)) {
+	case "buy", "long":
+		return "buy", true
+	case "sell", "short":
+		return "sell", true
+	default:
+		return "", false
+	}
+}
+
+func validateRequiredStringFlag(flagName string, value string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s is required", flagName)
 	}
 
 	return nil
+}
+
+func normalizeOutputMode(mode string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", "table":
+		return "table", true
+	case "json":
+		return "json", true
+	default:
+		return "", false
+	}
 }
 
 func validateAmountMode(mode string) error {

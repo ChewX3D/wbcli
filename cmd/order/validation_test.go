@@ -80,10 +80,10 @@ func TestValidateBase(t *testing.T) {
 			},
 		},
 		{
-			name: "valid case insensitive side",
+			name: "valid unknown side passes base validation",
 			options: baseOptions{
 				Market: "BTC_PERP",
-				Side:   "SELL",
+				Side:   "HOLD",
 			},
 		},
 		{
@@ -99,14 +99,6 @@ func TestValidateBase(t *testing.T) {
 				Market: "BTC_PERP",
 			},
 			wantError: "--side is required",
-		},
-		{
-			name: "unsupported side",
-			options: baseOptions{
-				Market: "BTC_PERP",
-				Side:   "hold",
-			},
-			wantError: "--side must be one of: buy, sell",
 		},
 	}
 
@@ -125,6 +117,84 @@ func TestValidateBase(t *testing.T) {
 			}
 			if err.Error() != testCase.wantError {
 				t.Fatalf("unexpected error. got %q want %q", err.Error(), testCase.wantError)
+			}
+		})
+	}
+}
+
+func TestNormalizeSideAlias(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantSide string
+		wantOK   bool
+	}{
+		{name: "buy", input: "buy", wantSide: "buy", wantOK: true},
+		{name: "long alias", input: "long", wantSide: "buy", wantOK: true},
+		{name: "sell", input: "sell", wantSide: "sell", wantOK: true},
+		{name: "short alias", input: "short", wantSide: "sell", wantOK: true},
+		{name: "case insensitive", input: "LoNg", wantSide: "buy", wantOK: true},
+		{name: "unsupported", input: "hold", wantSide: "", wantOK: false},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			gotSide, gotOK := normalizeSideAlias(testCase.input)
+			if gotSide != testCase.wantSide || gotOK != testCase.wantOK {
+				t.Fatalf("unexpected normalize result: got=(%q,%t), want=(%q,%t)", gotSide, gotOK, testCase.wantSide, testCase.wantOK)
+			}
+		})
+	}
+}
+
+func TestValidateRequiredStringFlag(t *testing.T) {
+	tests := []struct {
+		name      string
+		flag      string
+		value     string
+		wantError string
+	}{
+		{name: "valid", flag: "--amount", value: "0.1"},
+		{name: "empty", flag: "--price", value: "", wantError: "--price is required"},
+		{name: "spaces", flag: "--market", value: "   ", wantError: "--market is required"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := validateRequiredStringFlag(testCase.flag, testCase.value)
+			if testCase.wantError == "" {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+				return
+			}
+
+			if err == nil || err.Error() != testCase.wantError {
+				t.Fatalf("unexpected error. got %v want %q", err, testCase.wantError)
+			}
+		})
+	}
+}
+
+func TestNormalizeOutputMode(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantMode string
+		wantOK   bool
+	}{
+		{name: "default empty", input: "", wantMode: "table", wantOK: true},
+		{name: "table", input: "table", wantMode: "table", wantOK: true},
+		{name: "json", input: "json", wantMode: "json", wantOK: true},
+		{name: "case insensitive", input: "JSON", wantMode: "json", wantOK: true},
+		{name: "invalid", input: "yaml", wantMode: "", wantOK: false},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			gotMode, gotOK := normalizeOutputMode(testCase.input)
+			if gotMode != testCase.wantMode || gotOK != testCase.wantOK {
+				t.Fatalf("unexpected normalize result: got=(%q,%t), want=(%q,%t)", gotMode, gotOK, testCase.wantMode, testCase.wantOK)
 			}
 		})
 	}
