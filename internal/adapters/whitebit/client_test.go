@@ -141,24 +141,24 @@ func TestExtractErrorMessageFromErrorsOnlyPayload(t *testing.T) {
 
 func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 	testCases := []struct {
-		name        string
-		statusCode  int
-		expectedErr error
+		name         string
+		statusCode   int
+		expectedCode ports.ErrorCode
 	}{
 		{
-			name:        "unauthorized",
-			statusCode:  http.StatusUnauthorized,
-			expectedErr: ports.ErrCredentialVerifyUnauthorized,
+			name:         "unauthorized",
+			statusCode:   http.StatusUnauthorized,
+			expectedCode: ports.CodeUnauthorized,
 		},
 		{
-			name:        "forbidden",
-			statusCode:  http.StatusForbidden,
-			expectedErr: ports.ErrCredentialVerifyForbidden,
+			name:         "forbidden",
+			statusCode:   http.StatusForbidden,
+			expectedCode: ports.CodeForbidden,
 		},
 		{
-			name:        "unavailable",
-			statusCode:  http.StatusServiceUnavailable,
-			expectedErr: ports.ErrCredentialVerifyUnavailable,
+			name:         "unavailable",
+			statusCode:   http.StatusServiceUnavailable,
+			expectedCode: ports.CodeUnavailable,
 		},
 	}
 
@@ -175,8 +175,12 @@ func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 				APIKey:    "public-key",
 				APISecret: []byte("secret-key"),
 			})
-			if !errors.Is(err, testCase.expectedErr) {
-				t.Fatalf("expected error %v, got %v", testCase.expectedErr, err)
+			var apiErr *ports.APIError
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("expected APIError, got %T: %v", err, err)
+			}
+			if apiErr.Code != testCase.expectedCode {
+				t.Fatalf("expected code %v, got %v", testCase.expectedCode, apiErr.Code)
 			}
 		})
 	}
@@ -225,18 +229,18 @@ func TestCredentialVerifierAdapterUnauthorizedActionDeniedMapsToInsufficientAcce
 		t.Fatalf("expected error")
 	}
 
-	var verificationErr *ports.CredentialVerificationError
-	if !errors.As(err, &verificationErr) {
-		t.Fatalf("expected CredentialVerificationError, got %v", err)
+	var apiErr *ports.APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected APIError, got %v", err)
 	}
-	if verificationErr.Reason != ports.CredentialVerificationInsufficientAccess {
-		t.Fatalf("expected insufficient access reason, got %s", verificationErr.Reason)
+	if apiErr.Code != ports.CodeForbidden {
+		t.Fatalf("expected CodeForbidden, got %s", apiErr.Code)
 	}
-	if verificationErr.Endpoint != collateralAccountHedgeModePath {
-		t.Fatalf("expected endpoint %q, got %q", collateralAccountHedgeModePath, verificationErr.Endpoint)
+	if !strings.Contains(apiErr.Details, collateralAccountHedgeModePath) {
+		t.Fatalf("expected endpoint %q in details, got %q", collateralAccountHedgeModePath, apiErr.Details)
 	}
-	if !strings.Contains(strings.ToLower(verificationErr.Detail), "not authorized to perform this action") {
-		t.Fatalf("expected action denied detail, got %q", verificationErr.Detail)
+	if !strings.Contains(strings.ToLower(apiErr.Details), "not authorized to perform this action") {
+		t.Fatalf("expected action denied detail, got %q", apiErr.Details)
 	}
 }
 

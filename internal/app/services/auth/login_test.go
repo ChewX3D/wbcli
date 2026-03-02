@@ -179,7 +179,11 @@ func TestLoginServiceExecuteOverwritesExistingCredential(t *testing.T) {
 func TestLoginServiceExecuteFailsWhenProbeFails(t *testing.T) {
 	credentialStore := &fakeCredentialStore{backendName: "os-keychain"}
 	sessionStore := &fakeSessionStore{}
-	credentialVerifier := &fakeCredentialVerifier{err: ports.ErrCredentialVerifyUnauthorized}
+	probeErr := &ports.APIError{
+		Code:    ports.CodeUnauthorized,
+		Message: "credential verification failed: credentials are invalid",
+	}
+	credentialVerifier := &fakeCredentialVerifier{err: probeErr}
 	service := NewLoginService(credentialStore, sessionStore, fixedClock{now: time.Now()}, credentialVerifier)
 
 	_, err := service.Execute(context.Background(), LoginRequest{
@@ -189,8 +193,12 @@ func TestLoginServiceExecuteFailsWhenProbeFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected probe error")
 	}
-	if !errors.Is(err, ports.ErrCredentialVerifyUnauthorized) {
-		t.Fatalf("expected unauthorized probe error, got %v", err)
+	var apiErr *ports.APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected APIError, got %T: %v", err, err)
+	}
+	if apiErr.Code != ports.CodeUnauthorized {
+		t.Fatalf("expected CodeUnauthorized, got %v", apiErr.Code)
 	}
 	if credentialStore.credential != nil {
 		t.Fatalf("expected credential to stay unsaved on probe failure")

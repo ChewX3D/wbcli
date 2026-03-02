@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/ChewX3D/wbcli/internal/adapters/whitebit"
 	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
@@ -216,11 +214,11 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 	credentialVerifier := &testCredentialVerifier{
-		err: ports.NewCredentialVerificationError(
-			ports.CredentialVerificationInvalidCredentials,
-			"/api/v4/collateral-account/hedge-mode",
-			"status 401: invalid signature",
-		),
+		err: &ports.APIError{
+			Code:    ports.CodeUnauthorized,
+			Message: "credential verification failed: credentials are invalid",
+			Details: "endpoint: /api/v4/collateral-account/hedge-mode. reason: status 401: invalid signature",
+		},
 	}
 
 	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
@@ -243,11 +241,11 @@ func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 	credentialVerifier := &testCredentialVerifier{
-		err: ports.NewCredentialVerificationError(
-			ports.CredentialVerificationInsufficientAccess,
-			"/api/v4/collateral-account/hedge-mode",
-			"status 401: This API Key is not authorized to perform this action.",
-		),
+		err: &ports.APIError{
+			Code:    ports.CodeForbidden,
+			Message: "credential verification failed: API token lacks endpoint permission",
+			Details: "enable access to endpoint /api/v4/collateral-account/hedge-mode in your WhiteBIT API key settings. reason: status 401: This API Key is not authorized to perform this action.",
+		},
 	}
 
 	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
@@ -265,11 +263,11 @@ func TestAuthLoginInsufficientAccessIncludesProvidedEndpoint(t *testing.T) {
 	credentialStore := &testCredentialStore{backendName: "os-keychain"}
 	sessionStore := &testSessionStore{}
 	credentialVerifier := &testCredentialVerifier{
-		err: ports.NewCredentialVerificationError(
-			ports.CredentialVerificationInsufficientAccess,
-			"/api/v4/order/collateral/limit",
-			"status 401: not authorized",
-		),
+		err: &ports.APIError{
+			Code:    ports.CodeForbidden,
+			Message: "credential verification failed: API token lacks endpoint permission",
+			Details: "enable access to endpoint /api/v4/order/collateral/limit in your WhiteBIT API key settings. reason: status 401: not authorized",
+		},
 	}
 
 	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
@@ -437,7 +435,11 @@ func TestCollateralOrderPlaceInsufficientPermissionErrorMapping(t *testing.T) {
 	credentialStore := &testCredentialStore{backendName: "os-keychain"}
 	sessionStore := &testSessionStore{}
 	placeUseCase := &testCollateralUseCases{
-		err: fmt.Errorf("whitebit api auth error: status 403: This API Key is not authorized to perform this action.: %w", whitebit.ErrForbidden),
+		err: &ports.APIError{
+			Code:    ports.CodeForbidden,
+			Message: "order placement failed: API token lacks endpoint permission",
+			Details: "enable access to endpoint /api/v4/order/collateral/limit in your WhiteBIT API key settings. reason: This API Key is not authorized to perform this action.",
+		},
 	}
 
 	application := testApplication(credentialStore, sessionStore, nil)

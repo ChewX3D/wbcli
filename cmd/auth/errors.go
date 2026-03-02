@@ -2,7 +2,6 @@ package authcmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ChewX3D/wbcli/internal/app/ports"
 	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
@@ -25,9 +24,6 @@ var staticAuthErrorRules = []staticAuthErrorRule{
 	{match: ports.ErrCredentialNotFound, message: "not logged in; run wbcli auth login first"},
 	{match: ports.ErrSecretStoreUnavailable, message: "os-keychain backend is unavailable on this system; install/unlock keychain backend and retry"},
 	{match: ports.ErrSecretStorePermissionDenied, message: "os-keychain access denied; keychain is locked or access is restricted"},
-	{match: ports.ErrCredentialVerifyUnauthorized, message: "whitebit credential verification failed: credentials are invalid"},
-	{match: ports.ErrCredentialVerifyForbidden, message: "whitebit credential verification failed: token permissions are insufficient"},
-	{match: ports.ErrCredentialVerifyUnavailable, message: "whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later"},
 }
 
 func mapError(err error) error {
@@ -35,8 +31,9 @@ func mapError(err error) error {
 		return nil
 	}
 
-	if mappedErr, ok := mapCredentialVerificationError(err); ok {
-		return mappedErr
+	var apiErr *ports.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr
 	}
 
 	for _, rule := range staticAuthErrorRules {
@@ -46,40 +43,4 @@ func mapError(err error) error {
 	}
 
 	return err
-}
-
-func mapCredentialVerificationError(err error) (error, bool) {
-	var verificationErr *ports.CredentialVerificationError
-	if !errors.As(err, &verificationErr) {
-		return nil, false
-	}
-
-	baseMessage := ""
-	switch verificationErr.Reason {
-	case ports.CredentialVerificationInvalidCredentials:
-		baseMessage = "whitebit credential verification failed: credentials are invalid"
-	case ports.CredentialVerificationInsufficientAccess:
-		baseMessage = fmt.Sprintf(
-			"whitebit credential verification failed: token permissions are insufficient; enable access to endpoint %s",
-			normalizeEndpoint(verificationErr.Endpoint),
-		)
-	case ports.CredentialVerificationUnavailable:
-		baseMessage = "whitebit credential verification unavailable: network issue or WhiteBIT service error; retry later"
-	default:
-		baseMessage = "whitebit credential verification failed"
-	}
-
-	if verificationErr.Detail == "" {
-		return errors.New(baseMessage), true
-	}
-
-	return fmt.Errorf("%s. reason: %s", baseMessage, verificationErr.Detail), true
-}
-
-func normalizeEndpoint(endpoint string) string {
-	if endpoint == "" {
-		return "<required-endpoint>"
-	}
-
-	return endpoint
 }

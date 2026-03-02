@@ -30,7 +30,7 @@ func (adapter *CollateralOrderExecutorAdapter) GetCollateralAccountHedgeMode(
 ) (bool, error) {
 	response, err := adapter.client.GetCollateralAccountHedgeMode(ctx, credential)
 	if err != nil {
-		return false, err
+		return false, buildAPIError(err, collateralAccountHedgeModePath, "hedge mode query")
 	}
 
 	return response.HedgeMode, nil
@@ -44,7 +44,7 @@ func (adapter *CollateralOrderExecutorAdapter) PlaceCollateralLimitOrder(
 ) (json.RawMessage, error) {
 	postOnly := request.PostOnly
 
-	return adapter.client.PlaceCollateralLimitOrder(ctx, credential, CollateralLimitOrderRequest{
+	result, err := adapter.client.PlaceCollateralLimitOrder(ctx, credential, CollateralLimitOrderRequest{
 		Market:        request.Market,
 		Side:          OrderSide(request.Side),
 		PositionSide:  PositionSide(request.PositionSide),
@@ -53,4 +53,9 @@ func (adapter *CollateralOrderExecutorAdapter) PlaceCollateralLimitOrder(
 		ClientOrderID: request.ClientOrderID,
 		PostOnly:      &postOnly,
 	})
+	if err != nil {
+		return nil, buildAPIError(err, collateralLimitOrderPath, "order placement")
+	}
+
+	return result, nil
 }
