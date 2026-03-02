@@ -31,7 +31,7 @@ because it IS the composition root. This exception must be stated in CLAUDE.md:
 ---
 
 ### GAP-002 — `cmd/order/errors.go` imports `internal/adapters/whitebit` directly
-**Severity:** high
+**Severity:** ~~high~~ — **resolved** (commit `c8f0b0f`)
 
 `cmd/order/errors.go` imports the WhiteBIT adapter package to check what kind of error
 came back from a failed order:
@@ -162,7 +162,7 @@ partial vertical slices dangling at the transport layer.
 ## DRY Violations
 
 ### GAP-007 — `indicatesMissingEndpointAccess` and `extractErrorDetail` duplicated
-**Severity:** high
+**Severity:** ~~high~~ — **resolved** as part of GAP-002 fix (commit `c8f0b0f`)
 
 Identical string-scraping logic appears in two packages:
 
