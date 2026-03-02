@@ -116,6 +116,39 @@ Storage/security boundaries:
 - config permission target on macOS/Linux: `0600`
 - command outputs/errors must not leak API secret, payload, or signature values
 
+### Collateral Order Commands
+
+Current model:
+
+- single-order placement command path is `wbcli collateral order place`
+- legacy root path `wbcli order ...` is removed
+- `collateral order place` uses single-session auth credentials from keychain-backed store
+
+`collateral order place` contract:
+
+- required flags:
+  - `--market`
+  - `--side`
+  - `--amount`
+  - `--price`
+- optional flags:
+  - `--client-order-id` (pass-through only)
+  - `--output table|json` (default `table`)
+- side aliases are normalized in CLI adapter layer only:
+  - `buy|long` -> `buy`
+  - `sell|short` -> `sell`
+- command always submits `postOnly=true`
+- no `--profile`, no `--expiration`
+
+Output contract:
+
+- `request_id`
+- `mode`
+- `orders_planned`
+- `orders_submitted`
+- `orders_failed`
+- `errors[]`
+
 ### WhiteBIT Transport Client
 
 Current adapter behavior (`internal/adapters/whitebit`):

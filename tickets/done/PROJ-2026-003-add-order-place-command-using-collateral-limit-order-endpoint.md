@@ -3,7 +3,7 @@
 ID: PROJ-2026-003
 Title: Add collateral order place command using collateral limit order endpoint
 Priority: P1
-Status: Ready
+Status: Done
 Owner: chewbaccalol
 Due Date: 2026-03-05
 Created: 2026-02-26
@@ -17,22 +17,22 @@ Outcome:
 `wbcli collateral order place` submits one collateral limit order, validates inputs, and returns consistent table/json output.
 
 Acceptance Criteria:
-- [ ] Command supports required fields (`market`, `side`, `amount`, `price`) and optional flags.
-- [ ] `--side` accepts aliases: `buy|long` and `sell|short`, with case-insensitive matching.
-- [ ] Side alias normalization is performed in CLI command adapter files (`cmd/*`) before calling services; services receive canonical values only and do not normalize aliases.
-- [ ] `collateral order place` always submits with `postOnly=true` (no CLI flag to disable).
-- [ ] Command reads credentials from single-session auth state and uses signed client adapter.
-- [ ] Command path is `wbcli collateral order place` (not `wbcli order place`).
-- [ ] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete examples with WhiteBIT-valid market values (for example `BTC_PERP`).
-- [ ] CLI performs minimal local validation only (flag parsing, required fields, side-alias normalization); business/validation failures are handled by WhiteBIT API/domain errors.
-- [ ] `--output` supports only `table|json` with default `table`.
-- [ ] `--client-order-id` is pass-through only with no strict validation in this ticket (and no strict validation planned).
-- [ ] Output contract includes `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]`.
-- [ ] Exit code is `0` on success and non-zero on validation/auth/API failures.
-- [ ] Main error reason text is populated from domain/adapter error data (WhiteBIT response mapping) rather than duplicated CLI-specific reason synthesis.
-- [ ] Auth failures provide explicit guidance; insufficient-permission errors must include required endpoint path in message.
-- [ ] WhiteBIT API reason is shown safely (explicit but no secret/payload/signature leakage).
-- [ ] Unit tests cover successful placement and representative validation/auth failures; no integration tests for order submission endpoints.
+- [x] Command supports required fields (`market`, `side`, `amount`, `price`) and optional flags.
+- [x] `--side` accepts aliases: `buy|long` and `sell|short`, with case-insensitive matching.
+- [x] Side alias normalization is performed in CLI command adapter files (`cmd/*`) before calling services; services receive canonical values only and do not normalize aliases.
+- [x] `collateral order place` always submits with `postOnly=true` (no CLI flag to disable).
+- [x] Command reads credentials from single-session auth state and uses signed client adapter.
+- [x] Command path is `wbcli collateral order place` (not `wbcli order place`).
+- [x] `--help` output for `wbcli collateral order place` is exhaustive and includes concrete examples with WhiteBIT-valid market values (for example `BTC_PERP`).
+- [x] CLI performs minimal local validation only (flag parsing, required fields, side-alias normalization); business/validation failures are handled by WhiteBIT API/domain errors.
+- [x] `--output` supports only `table|json` with default `table`.
+- [x] `--client-order-id` is pass-through only with no strict validation in this ticket (and no strict validation planned).
+- [x] Output contract includes `request_id`, `mode`, `orders_planned`, `orders_submitted`, `orders_failed`, `errors[]`.
+- [x] Exit code is `0` on success and non-zero on validation/auth/API failures.
+- [x] Main error reason text is populated from domain/adapter error data (WhiteBIT response mapping) rather than duplicated CLI-specific reason synthesis.
+- [x] Auth failures provide explicit guidance; insufficient-permission errors must include required endpoint path in message.
+- [x] WhiteBIT API reason is shown safely (explicit but no secret/payload/signature leakage).
+- [x] Unit tests cover successful placement and representative validation/auth failures; no integration tests for order submission endpoints.
 
 Risks:
 - Precision/notional validation gaps can cause rejected orders.
@@ -140,3 +140,4 @@ Status Notes:
 - 2026-03-01: Simplified scope by removing `expiration` and removing `ioc/rpi` validation from this ticket.
 - 2026-03-01: Clarified contract details: case-insensitive side aliases, non-empty market validation only, `--output table|json` default `table`, pass-through `--client-order-id`, WhiteBIT-valid `BTC_PERP` help examples, and explicit exit code behavior.
 - 2026-03-02: Switched to API-first validation/error policy, required domain-error-driven reason propagation, strengthened auth guidance expectations, and added an explicit unit-test matrix.
+- 2026-03-02: Implemented collateral order place command, wired app service + adapter, updated tests and docs.

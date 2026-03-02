@@ -47,35 +47,32 @@ Implementation notes:
   - support local credential revoke/delete (`auth revoke` / `auth logout`)
   - prefer restricted exchange-side API key permissions and IP allowlist where supported
 
-### `wbcli order place`
+### `wbcli collateral order place`
 
 Example:
 
 ```bash
-wbcli order place \
-  --profile default \
+wbcli collateral order place \
   --market BTC_PERP \
-  --side buy \
+  --side long \
   --amount 0.01 \
   --price 50000 \
-  --expiration 0 \
   --client-order-id my-order-001
 ```
 
 Flow:
 
-1. validate args and market precision rules
-2. sign WhiteBIT request
-3. submit order
-4. print normalized response and local audit record ID
+1. validate required flags and normalize side aliases (`buy|long`, `sell|short`) in CLI adapter
+2. load credentials from single-session secure storage
+3. sign WhiteBIT request and submit order with `postOnly=true`
+4. print normalized output contract in `table` or `json` format
 
-### `wbcli order range`
+### `wbcli collateral order range`
 
 Example:
 
 ```bash
-wbcli order range \
-  --profile default \
+wbcli collateral order range \
   --market BTC_PERP \
   --side buy \
   --start-price 49000 \

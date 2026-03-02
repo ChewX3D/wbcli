@@ -20,18 +20,11 @@ Required:
 - `side` (`buy` or `sell`)
 - `amount`
 - `price`
-- `expiration`
 
 Optional:
 
 - `clientOrderId`
 - `postOnly`
-- `ioc`
-- `rpi`
-
-Important constraint:
-
-- WhiteBIT rejects requests where both `rpi=true` and `ioc=true`.
 
 ## Authentication and Signing
 
@@ -74,7 +67,7 @@ Derived from WhiteBIT private auth requirements (`X-TXC-APIKEY`, `X-TXC-PAYLOAD`
 Recommended for CLI:
 
 - use millisecond timestamp as default nonce
-- ensure strict monotonic increase per profile/process
+- ensure strict monotonic increase per process
 - keep a local last-nonce cache to avoid duplicate nonce on rapid calls
 
 ## API Error Handling

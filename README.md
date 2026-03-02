@@ -22,9 +22,9 @@ This repository currently defines the project plan and operating docs for:
   - never persist raw secrets in git-tracked files
   - single-session auth state: user is logged in or logged out
   - commands: `auth login`, `auth logout`, `auth status`
-- `order place`:
+- `collateral order place`:
   - place one collateral limit order via WhiteBIT authenticated API
-- `order range`:
+- `collateral order range`:
   - generate and place a range of limit orders from `start` to `end` with `step`
   - amount modes:
     - constant amount per step
@@ -104,6 +104,27 @@ Other auth commands:
 ```bash
 wbcli auth status
 wbcli auth logout
+```
+
+## Collateral order usage
+
+Single order placement:
+
+```bash
+wbcli collateral order place --market BTC_PERP --side buy --amount 0.01 --price 50000
+```
+
+Alias side values are accepted in CLI:
+
+```bash
+wbcli collateral order place --market BTC_PERP --side long --amount 0.01 --price 50000
+wbcli collateral order place --market BTC_PERP --side short --amount 0.01 --price 50000
+```
+
+Machine-readable output:
+
+```bash
+wbcli collateral order place --market BTC_PERP --side sell --amount 0.01 --price 50000 --output json
 ```
 
 Security notes:
