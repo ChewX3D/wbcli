@@ -99,32 +99,6 @@ struct field needed — just include it in the text that already flows into `API
 
 ---
 
-### GAP-006 — `PlaceCollateralBulkLimitOrder` exists but nothing uses it
-**Severity:** medium
-
-**What is wrong:**
-
-The transport client has a `PlaceCollateralBulkLimitOrder` method with tests, but:
-
-- no port interface method exists for bulk orders
-- no adapter method wraps it
-- no service or command calls it
-
-**Why it matters:**
-
-The mirror rule says the client should have "nothing more and nothing less" than what
-the product needs from the API. An unused transport method adds maintenance cost for
-a feature that does not exist yet. Every time the client changes, this method and its
-tests have to be kept in sync even though nothing uses them.
-
-**Fix:**
-
-Either wire it up fully (port method, adapter method, service, command) or remove it
-until the feature is planned. Do not leave half-built vertical slices at the transport
-layer.
-
----
-
 ## DRY Violations
 
 ### GAP-008 — `boolRef` helper is copy-pasted across two service packages
@@ -201,8 +175,7 @@ never stored as a mutable global.
 | 2 | GAP-010 | Add missing `rpi` field and complete ioc+rpi validation |
 | 3 | GAP-012 | Include error `code` in detail string for actionable errors |
 | 4 | GAP-009 | Remove mutable global; pass factory as parameter |
-| 5 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
-| 6 | GAP-008 | Extract `boolRef` to shared utility |
+| 5 | GAP-008 | Delete `boolRef`, create generic `Ptr[T]` utility |
 
 ---
 
@@ -287,3 +260,12 @@ call for a request the API will definitely reject.
 
 **Decision:** Keep the check in `CollateralLimitOrderRequest.validate()`. This is
 transport-level input validation, not a business rule.
+
+---
+
+### GAP-006 — `PlaceCollateralBulkLimitOrder` exists but nothing uses it
+**Severity:** ~~medium~~ — **closed, pre-built for planned ticket**
+
+The bulk order transport method is pre-built for PROJ-2026-008 (range live submission
+via collateral bulk order endpoint). It will be wired up when that ticket moves to
+implementation.
