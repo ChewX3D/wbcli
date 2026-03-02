@@ -106,6 +106,39 @@ func TestClientStatusErrorMapping(t *testing.T) {
 	}
 }
 
+func TestMapHTTPStatusErrorValidationIncludesFieldDetails(t *testing.T) {
+	err := mapHTTPStatusError(http.StatusUnprocessableEntity, []byte(`{
+		"message": "Validation failed",
+		"errors": {
+			"market": ["The selected market is invalid."],
+			"amount": ["The amount field is required."]
+		}
+	}`))
+	if !errors.Is(err, ErrAPIValidation) {
+		t.Fatalf("expected validation error category, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "Validation failed") {
+		t.Fatalf("expected generic message, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "market: The selected market is invalid.") {
+		t.Fatalf("expected market detail, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "amount: The amount field is required.") {
+		t.Fatalf("expected amount detail, got %v", err)
+	}
+}
+
+func TestExtractErrorMessageFromErrorsOnlyPayload(t *testing.T) {
+	message := extractErrorMessage([]byte(`{
+		"errors": {
+			"price": ["The price field is required."]
+		}
+	}`))
+	if !strings.Contains(message, "price: The price field is required.") {
+		t.Fatalf("expected errors-only detail, got %q", message)
+	}
+}
+
 func TestCredentialVerifierAdapterVerifyMapsErrors(t *testing.T) {
 	testCases := []struct {
 		name        string

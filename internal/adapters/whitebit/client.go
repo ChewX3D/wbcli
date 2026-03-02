@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -108,10 +109,6 @@ type privateEnvelope struct {
 	Nonce   string `json:"nonce"`
 }
 
-type whitebitErrorPayload struct {
-	Message string `json:"message"`
-}
-
 func (client *Client) nextPrivateEnvelope(path string) privateEnvelope {
 	return privateEnvelope{
 		Request: path,
@@ -206,12 +203,114 @@ func extractErrorMessage(body []byte) string {
 		return ""
 	}
 
-	var payload whitebitErrorPayload
+	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return ""
 	}
 
-	return strings.TrimSpace(payload.Message)
+	message := firstNonEmptyString(
+		payload["message"],
+		payload["error"],
+		payload["detail"],
+		payload["description"],
+	)
+	validationDetails := flattenValidationErrors(payload["errors"])
+
+	switch {
+	case message == "" && validationDetails == "":
+		return ""
+	case message == "":
+		return validationDetails
+	case validationDetails == "":
+		return message
+	default:
+		return message + ": " + validationDetails
+	}
+}
+
+func firstNonEmptyString(values ...any) string {
+	for _, value := range values {
+		asString, ok := value.(string)
+		if !ok {
+			continue
+		}
+
+		trimmed := strings.TrimSpace(asString)
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+
+	return ""
+}
+
+func flattenValidationErrors(value any) string {
+	if value == nil {
+		return ""
+	}
+
+	byField, ok := value.(map[string]any)
+	if !ok {
+		return strings.Join(flattenErrorLeaf(value), ", ")
+	}
+
+	keys := make([]string, 0, len(byField))
+	for key := range byField {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		messages := flattenErrorLeaf(byField[key])
+		if len(messages) == 0 {
+			continue
+		}
+
+		parts = append(parts, key+": "+strings.Join(messages, ", "))
+	}
+
+	return strings.Join(parts, "; ")
+}
+
+func flattenErrorLeaf(value any) []string {
+	switch typed := value.(type) {
+	case nil:
+		return nil
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if trimmed == "" {
+			return nil
+		}
+
+		return []string{trimmed}
+	case []any:
+		parts := make([]string, 0, len(typed))
+		for _, item := range typed {
+			parts = append(parts, flattenErrorLeaf(item)...)
+		}
+
+		return parts
+	case map[string]any:
+		keys := make([]string, 0, len(typed))
+		for key := range typed {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		parts := make([]string, 0, len(typed))
+		for _, key := range keys {
+			nested := flattenErrorLeaf(typed[key])
+			if len(nested) == 0 {
+				continue
+			}
+			parts = append(parts, key+"="+strings.Join(nested, ", "))
+		}
+
+		return parts
+	default:
+		return nil
+	}
 }
 
 func signPayload(encodedPayload string, secret []byte) string {
