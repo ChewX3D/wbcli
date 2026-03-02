@@ -14,39 +14,6 @@ Severity scale: **high** | **medium** | **low**
 
 ## WhiteBIT Transport Client Mirror Rule Violations
 
-### GAP-005 — `PostOnly + IOC` conflict check is a business rule inside the transport client
-**Severity:** medium
-
-**What is wrong:**
-
-The transport client validates that `PostOnly` and `IOC` cannot both be `true` at the
-same time:
-
-```go
-// internal/adapters/whitebit/collateral.go — CollateralLimitOrderRequest.validate()
-if request.PostOnly != nil && request.IOC != nil && *request.PostOnly && *request.IOC {
-    return ErrPostOnlyIOCConflict
-}
-```
-
-**Why it matters:**
-
-The transport client should be a strict mirror of the WhiteBIT API — it sends fields
-and reads responses, nothing more. Knowing that PostOnly and IOC are mutually exclusive
-is a trading rule (business knowledge), not a transport shape check.
-
-Other checks in `validate()` — like requiring non-empty `Market`, `Amount`, `Price` —
-are acceptable because they prevent malformed HTTP requests. The PostOnly+IOC rule is
-different: it enforces order semantics, which belongs in the service or adapter layer.
-
-**Fix:**
-
-Remove the `ErrPostOnlyIOCConflict` check from `CollateralLimitOrderRequest.validate()`.
-Move it into `CollateralOrderExecutorAdapter.PlaceCollateralLimitOrder` or into the
-collateral service.
-
----
-
 ### GAP-006 — `PlaceCollateralBulkLimitOrder` exists but nothing uses it
 **Severity:** medium
 
@@ -138,9 +105,8 @@ never stored as a mutable global.
 | Order | Finding | Reason |
 |-------|---------|--------|
 | 1 | GAP-009 | Remove mutable global; pass factory as parameter |
-| 2 | GAP-005 | Move PostOnly+IOC rule out of transport client |
-| 3 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
-| 4 | GAP-008 | Extract `boolRef` to shared utility |
+| 2 | GAP-006 | Decide: wire bulk orders fully or remove dead code |
+| 3 | GAP-008 | Extract `boolRef` to shared utility |
 
 ---
 
@@ -212,3 +178,16 @@ type (`authservice.SystemClock{}`).
 **Resolution:** Renamed to `clock.Real` and moved to `internal/adapters/clock/real.go`.
 The composition root now imports from adapters like every other concrete dependency.
 Deleted `internal/app/services/auth/clock.go`.
+
+---
+
+### GAP-005 — `PostOnly + IOC` conflict check in the transport client
+**Severity:** ~~medium~~ — **closed, not a violation**
+
+The WhiteBIT API documents error code `37` specifically for the `postOnly=true` +
+`ioc=true` combination. The client-side check mirrors a documented API constraint —
+same category as validating enum values or required fields. It prevents a wasted HTTP
+call for a request the API will definitely reject.
+
+**Decision:** Keep the check in `CollateralLimitOrderRequest.validate()`. This is
+transport-level input validation, not a business rule.
