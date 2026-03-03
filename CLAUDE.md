@@ -319,17 +319,17 @@ If any step fails, the change is not ready and must be fixed before merge/push.
 
 VERY IMPORTANT (MANDATORY):
 
-- CLI must remain installable directly from repository root using:
-  - `go install github.com/ChewX3D/wbcli@latest`
-- changes must not break root package build/install flow
-- entrypoint and wiring for installable CLI must stay rooted in top-level `main.go`
+- CLI must remain installable directly from repository using:
+  - `go install github.com/ChewX3D/crypto/cmd/wbcli@latest`
+- changes must not break CLI build/install flow
+- entrypoint for installable CLI lives at `cmd/wbcli/main.go`
 
 Required verification for CLI-impacting changes:
 
 - run `mkdir -p /tmp/gobin`
-- run `go build -o /tmp/gobin .`
+- run `go build -o /tmp/gobin/wbcli ./cmd/wbcli`
 - run `go test ./...`
-- run `go install github.com/ChewX3D/wbcli@latest` (or equivalent local validation in restricted environments)
+- run `go install github.com/ChewX3D/crypto/cmd/wbcli@latest` (or equivalent local validation in restricted environments)
 
 ## Go Code Style (Google)
 
@@ -602,7 +602,11 @@ Recommended tree (source of truth for placement):
 
 ```text
 cmd/
+  wbcli/
+  bot/
 internal/
+  wbcli/
+    cmd/
   domain/
   app/
     application/
@@ -619,8 +623,11 @@ scripts/
 
 What goes where:
 
-- `cmd/`
-  - Cobra command definitions and flag parsing
+- `cmd/<binary>/`
+  - `package main` entrypoint for each binary (`cmd/wbcli/`, `cmd/bot/`)
+  - thin wiring: embed config, call command package
+- `internal/wbcli/cmd/`
+  - Cobra command definitions and flag parsing for wbcli CLI
   - CLI input/output wiring only
   - no business rules and no direct infrastructure calls
 - `internal/domain/`
@@ -660,7 +667,8 @@ What goes where:
 Feature-oriented example for auth:
 
 ```text
-cmd/auth/login.go
+cmd/wbcli/main.go
+internal/wbcli/cmd/auth/login.go
 internal/domain/auth/credential.go
 internal/app/application/factory.go
 internal/app/services/auth/login.go

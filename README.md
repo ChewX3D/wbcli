@@ -1,8 +1,8 @@
 # wbcli
 
-[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/test-coverage.json)](https://github.com/ChewX3D/wbcli/actions/workflows/badges.yml)
-![ARM size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/binary-size-arm64.json)
-![AMD size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/wbcli/main/configs/badges/binary-size-amd64.json)
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/crypto/main/configs/badges/test-coverage.json)](https://github.com/ChewX3D/crypto/actions/workflows/badges.yml)
+![ARM size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/crypto/main/configs/badges/binary-size-arm64.json)
+![AMD size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ChewX3D/crypto/main/configs/badges/binary-size-amd64.json)
 
 Lightweight CLI project for placing WhiteBIT trading orders safely, with a design that can later be wrapped by a UI.
 
@@ -44,19 +44,19 @@ This repository currently defines the project plan and operating docs for:
 ## Build
 
 ```bash
-go build -o bin/wbcli .
+go build -o bin/wbcli ./cmd/wbcli
 ```
 
 ## Install
 
 ```bash
-go install github.com/ChewX3D/wbcli@latest
+go install github.com/ChewX3D/crypto/cmd/wbcli@latest
 ```
 
 ## Run
 
 ```bash
-go run . --help
+go run ./cmd/wbcli --help
 ```
 
 ## Auth usage
@@ -169,7 +169,7 @@ Keep core logic reusable:
 - `internal/app`: use-cases (`PlaceOrder`, `PlaceOrderRange`, `PreviewRange`)
 - `internal/adapters/whitebit`: signed HTTP client + endpoint mapping
 - `internal/adapters/secretstore`: keychain integration
-- `main.go` + `cmd/`: CLI surface and command wiring only
+- `cmd/wbcli/` + `internal/wbcli/cmd/`: CLI surface and command wiring only
 
 This split lets you add a UI later without duplicating order logic.
 
