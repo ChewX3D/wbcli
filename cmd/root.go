@@ -4,15 +4,14 @@ import (
 	"log/slog"
 	"os"
 
+	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
 	"github.com/spf13/cobra"
 )
 
 const flagKeyVerbose = "verbose"
 
-var rootCmd = newRootCmd()
-
-func newRootCmd() *cobra.Command {
-	applicationProvider := newApplicationProvider()
+func newRootCmd(factory func() (*appcontainer.Application, error)) *cobra.Command {
+	applicationProvider := newApplicationProvider(factory)
 
 	root := &cobra.Command{
 		Use:   "wbcli",
@@ -41,16 +40,14 @@ It provides safe command groups for auth credential management and collateral or
 	return root
 }
 
+// Execute creates the root command with production defaults and runs it.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := newRootCmd(appcontainer.NewDefault).Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-func GetRootCmd() *cobra.Command {
-	return rootCmd
-}
-
-func NewRootCmdForTest() *cobra.Command {
-	return newRootCmd()
+// NewRootCmdForTest creates a root command with the given factory for tests.
+func NewRootCmdForTest(factory func() (*appcontainer.Application, error)) *cobra.Command {
+	return newRootCmd(factory)
 }

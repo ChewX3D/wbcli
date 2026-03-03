@@ -15,8 +15,12 @@ import (
 	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
 )
 
-func executeCommandWithInput(input string, args ...string) (string, string, error) {
-	command := NewRootCmdForTest()
+func executeCommandWithFactory(
+	factory func() (*appcontainer.Application, error),
+	input string,
+	args ...string,
+) (string, string, error) {
+	command := NewRootCmdForTest(factory)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
@@ -30,6 +34,13 @@ func executeCommandWithInput(input string, args ...string) (string, string, erro
 	err := command.Execute()
 
 	return stdout.String(), stderr.String(), err
+}
+
+func executeCommandWithInput(input string, args ...string) (string, string, error) {
+	factory := func() (*appcontainer.Application, error) {
+		return nil, ports.ErrSecretStoreUnavailable
+	}
+	return executeCommandWithFactory(factory, input, args...)
 }
 
 func executeCommand(args ...string) (string, string, error) {
@@ -103,9 +114,13 @@ func TestAuthLoginRejectsInvalidStdinContract(t *testing.T) {
 }
 
 func TestAuthStatusWorksWhenLoggedOut(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	credentialStore := &testCredentialStore{backendName: "os-keychain"}
+	sessionStore := &testSessionStore{}
 
-	stdout, _, err := executeCommand("auth", "status")
+	app := testApplication(credentialStore, sessionStore, nil)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
+
+	stdout, _, err := executeCommandWithFactory(factory, "", "auth", "status")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -129,9 +144,10 @@ func TestAuthLogoutWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
+	app := testApplication(credentialStore, sessionStore, nil)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	stdout, stderr, err := executeCommand("auth", "logout")
+	stdout, stderr, err := executeCommandWithFactory(factory, "", "auth", "logout")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -153,9 +169,10 @@ func TestAuthLogoutIdempotentWhenLoggedOut(t *testing.T) {
 	credentialStore := &testCredentialStore{backendName: "os-keychain"}
 	sessionStore := &testSessionStore{}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
+	app := testApplication(credentialStore, sessionStore, nil)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	stdout, _, err := executeCommand("auth", "logout")
+	stdout, _, err := executeCommandWithFactory(factory, "", "auth", "logout")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -176,9 +193,10 @@ func TestAuthStatusWorksWhenLoggedIn(t *testing.T) {
 		},
 	}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
+	app := testApplication(credentialStore, sessionStore, nil)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	stdout, _, err := executeCommand("auth", "status")
+	stdout, _, err := executeCommandWithFactory(factory, "", "auth", "status")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -197,9 +215,11 @@ func TestAuthStatusWorksWhenLoggedIn(t *testing.T) {
 }
 
 func TestAuthLoginUnavailableStoreReturnsActionableError(t *testing.T) {
-	withApplicationFactoryError(t, ports.ErrSecretStoreUnavailable)
+	factory := func() (*appcontainer.Application, error) {
+		return nil, ports.ErrSecretStoreUnavailable
+	}
 
-	_, _, err := executeCommandWithInput("api-key-1\nsecret-1\n", "auth", "login")
+	_, _, err := executeCommandWithFactory(factory, "api-key-1\nsecret-1\n", "auth", "login")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -221,9 +241,10 @@ func TestAuthLoginUnauthorizedReturnsActionableError(t *testing.T) {
 		},
 	}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
+	app := testApplication(credentialStore, sessionStore, credentialVerifier)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	_, _, err := executeCommandWithFactory(factory, "bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -248,9 +269,10 @@ func TestAuthLoginUnauthorizedActionDeniedSuggestsEndpointAccess(t *testing.T) {
 		},
 	}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
+	app := testApplication(credentialStore, sessionStore, credentialVerifier)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	_, _, err := executeCommandWithFactory(factory, "bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -270,9 +292,10 @@ func TestAuthLoginInsufficientAccessIncludesProvidedEndpoint(t *testing.T) {
 		},
 	}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, credentialVerifier))
+	app := testApplication(credentialStore, sessionStore, credentialVerifier)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	_, _, err := executeCommandWithInput("bad-key\nbad-secret\n", "auth", "login")
+	_, _, err := executeCommandWithFactory(factory, "bad-key\nbad-secret\n", "auth", "login")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -288,9 +311,10 @@ func TestAuthLogoutPermissionDeniedReturnsActionableError(t *testing.T) {
 	}
 	sessionStore := &testSessionStore{}
 
-	withApplicationFactory(t, testApplication(credentialStore, sessionStore, nil))
+	app := testApplication(credentialStore, sessionStore, nil)
+	factory := func() (*appcontainer.Application, error) { return app, nil }
 
-	_, _, err := executeCommand("auth", "logout")
+	_, _, err := executeCommandWithFactory(factory, "", "auth", "logout")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -325,9 +349,9 @@ func TestCollateralOrderPlaceSuccessTableOutput(t *testing.T) {
 
 	application := testApplication(credentialStore, sessionStore, nil)
 	application.Collateral = placeUseCase
-	withApplicationFactory(t, application)
+	factory := func() (*appcontainer.Application, error) { return application, nil }
 
-	stdout, _, err := executeCommand(
+	stdout, _, err := executeCommandWithFactory(factory, "",
 		"collateral", "order", "place",
 		"--market", "BTC_PERP",
 		"--side", "long",
@@ -365,9 +389,9 @@ func TestCollateralOrderPlaceSuccessJSONOutput(t *testing.T) {
 
 	application := testApplication(credentialStore, sessionStore, nil)
 	application.Collateral = placeUseCase
-	withApplicationFactory(t, application)
+	factory := func() (*appcontainer.Application, error) { return application, nil }
 
-	stdout, _, err := executeCommand(
+	stdout, _, err := executeCommandWithFactory(factory, "",
 		"collateral", "order", "place",
 		"--market", "BTC_PERP",
 		"--side", "sell",
@@ -414,9 +438,9 @@ func TestCollateralOrderPlaceNotLoggedInErrorMapping(t *testing.T) {
 
 	application := testApplication(credentialStore, sessionStore, nil)
 	application.Collateral = placeUseCase
-	withApplicationFactory(t, application)
+	factory := func() (*appcontainer.Application, error) { return application, nil }
 
-	_, _, err := executeCommand(
+	_, _, err := executeCommandWithFactory(factory, "",
 		"collateral", "order", "place",
 		"--market", "BTC_PERP",
 		"--side", "buy",
@@ -444,9 +468,9 @@ func TestCollateralOrderPlaceInsufficientPermissionErrorMapping(t *testing.T) {
 
 	application := testApplication(credentialStore, sessionStore, nil)
 	application.Collateral = placeUseCase
-	withApplicationFactory(t, application)
+	factory := func() (*appcontainer.Application, error) { return application, nil }
 
-	_, _, err := executeCommand(
+	_, _, err := executeCommandWithFactory(factory, "",
 		"collateral", "order", "place",
 		"--market", "BTC_PERP",
 		"--side", "buy",
@@ -483,24 +507,6 @@ func TestCollateralOrderRangeStub(t *testing.T) {
 	if !strings.Contains(stdout, "not implemented yet") {
 		t.Fatalf("expected stub output, got: %q", stdout)
 	}
-}
-
-func withApplicationFactory(t *testing.T, application *appcontainer.Application) {
-	t.Helper()
-
-	restore := SetApplicationFactoryForTest(func() (*appcontainer.Application, error) {
-		return application, nil
-	})
-	t.Cleanup(restore)
-}
-
-func withApplicationFactoryError(t *testing.T, factoryErr error) {
-	t.Helper()
-
-	restore := SetApplicationFactoryForTest(func() (*appcontainer.Application, error) {
-		return nil, factoryErr
-	})
-	t.Cleanup(restore)
 }
 
 func testApplication(

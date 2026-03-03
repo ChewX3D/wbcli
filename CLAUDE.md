@@ -182,7 +182,7 @@ Current wiring model:
 - command groups use one shared application container per CLI process (`internal/app/application`)
 - root command creates a cached application provider and passes it into command groups
 - application container exposes use-case interfaces (for example `AuthUseCases`) rather than direct adapter dependencies
-- tests override runtime wiring via `cmd.SetApplicationFactoryForTest`
+- tests override runtime wiring via `cmd.NewRootCmdForTest(factory)`
 
 ## Backlog And Todo Workflow
 
