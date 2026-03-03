@@ -218,16 +218,23 @@ func extractErrorMessage(body []byte) string {
 	)
 	validationDetails := flattenValidationErrors(payload["errors"])
 
+	var result string
 	switch {
 	case message == "" && validationDetails == "":
 		return ""
 	case message == "":
-		return validationDetails
+		result = validationDetails
 	case validationDetails == "":
-		return message
+		result = message
 	default:
-		return message + ": " + validationDetails
+		result = message + ": " + validationDetails
 	}
+
+	if code, ok := payload["code"].(float64); ok && code > 0 {
+		result = fmt.Sprintf("code %d: %s", int(code), result)
+	}
+
+	return result
 }
 
 func firstNonEmptyString(values ...any) string {

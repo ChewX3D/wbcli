@@ -108,6 +108,7 @@ func TestClientStatusErrorMapping(t *testing.T) {
 
 func TestMapHTTPStatusErrorValidationIncludesFieldDetails(t *testing.T) {
 	err := mapHTTPStatusError(http.StatusUnprocessableEntity, []byte(`{
+		"code": 32,
 		"message": "Validation failed",
 		"errors": {
 			"market": ["The selected market is invalid."],
@@ -117,6 +118,9 @@ func TestMapHTTPStatusErrorValidationIncludesFieldDetails(t *testing.T) {
 	if !errors.Is(err, ErrAPIValidation) {
 		t.Fatalf("expected validation error category, got %v", err)
 	}
+	if !strings.Contains(err.Error(), "code 32:") {
+		t.Fatalf("expected code prefix, got %v", err)
+	}
 	if !strings.Contains(err.Error(), "Validation failed") {
 		t.Fatalf("expected generic message, got %v", err)
 	}
@@ -125,6 +129,30 @@ func TestMapHTTPStatusErrorValidationIncludesFieldDetails(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "amount: The amount field is required.") {
 		t.Fatalf("expected amount detail, got %v", err)
+	}
+}
+
+func TestExtractErrorMessageWithCodeField(t *testing.T) {
+	message := extractErrorMessage([]byte(`{
+		"code": 37,
+		"message": "Validation failed",
+		"errors": {"ioc": ["ioc cannot be combined with postOnly"]}
+	}`))
+	if !strings.HasPrefix(message, "code 37: ") {
+		t.Fatalf("expected code prefix, got %q", message)
+	}
+	if !strings.Contains(message, "Validation failed") {
+		t.Fatalf("expected message body, got %q", message)
+	}
+}
+
+func TestExtractErrorMessageWithoutCodeField(t *testing.T) {
+	message := extractErrorMessage([]byte(`{"message": "Something failed"}`))
+	if strings.Contains(message, "code") {
+		t.Fatalf("expected no code prefix, got %q", message)
+	}
+	if message != "Something failed" {
+		t.Fatalf("expected plain message, got %q", message)
 	}
 }
 
