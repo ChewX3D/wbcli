@@ -25,8 +25,8 @@ var (
 	ErrInvalidOrderSide = errors.New("invalid order side")
 	// ErrInvalidPositionSide indicates unknown position side enum value.
 	ErrInvalidPositionSide = errors.New("invalid position side")
-	// ErrPostOnlyIOCConflict indicates unsupported postOnly+ioc combination.
-	ErrPostOnlyIOCConflict = errors.New("postOnly and ioc cannot both be true")
+	// ErrIOCConflict indicates unsupported ioc combination with postOnly or rpi.
+	ErrIOCConflict = errors.New("ioc cannot be combined with postOnly or rpi")
 	// ErrOrdersRequired indicates missing orders array for bulk endpoint.
 	ErrOrdersRequired = errors.New("orders are required")
 )
@@ -76,6 +76,7 @@ type CollateralLimitOrderRequest struct {
 	ClientOrderID string       `json:"clientOrderId,omitempty"`
 	PostOnly      *bool        `json:"postOnly,omitempty"`
 	IOC           *bool        `json:"ioc,omitempty"`
+	RPI           *bool        `json:"rpi,omitempty"`
 	StopLoss      string       `json:"stopLoss,omitempty"`
 	TakeProfit    string       `json:"takeProfit,omitempty"`
 }
@@ -117,8 +118,13 @@ func (request CollateralLimitOrderRequest) validate() error {
 	if request.PositionSide != "" && !request.PositionSide.IsValid() {
 		return ErrInvalidPositionSide
 	}
-	if request.PostOnly != nil && request.IOC != nil && *request.PostOnly && *request.IOC {
-		return ErrPostOnlyIOCConflict
+	if request.IOC != nil && *request.IOC {
+		if request.PostOnly != nil && *request.PostOnly {
+			return ErrIOCConflict
+		}
+		if request.RPI != nil && *request.RPI {
+			return ErrIOCConflict
+		}
 	}
 
 	return nil

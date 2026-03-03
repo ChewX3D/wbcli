@@ -280,7 +280,19 @@ func TestClientValidatesEnumAndOrderRules(t *testing.T) {
 		PostOnly: boolPtr(true),
 		IOC:      boolPtr(true),
 	})
-	if !errors.Is(err, ErrPostOnlyIOCConflict) {
-		t.Fatalf("expected postOnly/ioc conflict error, got %v", err)
+	if !errors.Is(err, ErrIOCConflict) {
+		t.Fatalf("expected ioc conflict error for postOnly+ioc, got %v", err)
+	}
+
+	_, err = client.PlaceCollateralLimitOrder(context.Background(), credential, CollateralLimitOrderRequest{
+		Market: "BTC_PERP",
+		Side:   OrderSideBuy,
+		Amount: "0.001",
+		Price:  "50000",
+		IOC:    boolPtr(true),
+		RPI:    boolPtr(true),
+	})
+	if !errors.Is(err, ErrIOCConflict) {
+		t.Fatalf("expected ioc conflict error for ioc+rpi, got %v", err)
 	}
 }
