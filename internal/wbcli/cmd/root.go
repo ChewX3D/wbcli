@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
 	"github.com/spf13/cobra"
 )
 

@@ -13,6 +13,6 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
-  github.com/ChewX3D/wbcli:
+  github.com/ChewX3D/crypto:
     config:
       all: true

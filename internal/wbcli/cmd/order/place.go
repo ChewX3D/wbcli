@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
-	collateralservice "github.com/ChewX3D/wbcli/internal/app/services/collateral"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
+	collateralservice "github.com/ChewX3D/crypto/internal/app/services/collateral"
 	"github.com/spf13/cobra"
 )
 

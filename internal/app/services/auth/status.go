@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
+	"github.com/ChewX3D/crypto/internal/app/ports"
 )
 
 // StatusResult returns current auth session state.

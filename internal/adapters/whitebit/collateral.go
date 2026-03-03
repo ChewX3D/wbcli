@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 const (

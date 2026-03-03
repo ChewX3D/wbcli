@@ -3,7 +3,7 @@ package main
 import (
 	_ "embed"
 
-	"github.com/ChewX3D/wbcli/cmd"
+	"github.com/ChewX3D/crypto/internal/wbcli/cmd"
 )
 
 //go:embed config.yaml

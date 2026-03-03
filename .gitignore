@@ -23,4 +23,5 @@ vendor/
 .DS_Store
 
 # Binaries
-wbcli
+/wbcli
+/bot

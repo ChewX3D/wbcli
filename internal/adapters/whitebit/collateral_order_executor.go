@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	"github.com/ChewX3D/crypto/internal/app/ports"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 // CollateralOrderExecutorAdapter adapts app order port to WhiteBIT transport client.

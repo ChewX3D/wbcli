@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
+	"github.com/ChewX3D/crypto/internal/app/ports"
 )
 
 // buildAPIError converts a WhiteBIT transport error into a ports.APIError with a user-facing

@@ -3,8 +3,8 @@ package whitebit
 import (
 	"context"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	"github.com/ChewX3D/crypto/internal/app/ports"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 // CredentialVerifierAdapter adapts auth credential verification port to WhiteBIT client endpoints.

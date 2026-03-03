@@ -3,9 +3,9 @@ package authcmd
 import (
 	"errors"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
-	clitools "github.com/ChewX3D/wbcli/internal/cli"
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	"github.com/ChewX3D/crypto/internal/app/ports"
+	clitools "github.com/ChewX3D/crypto/internal/cli"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 type staticAuthErrorRule struct {

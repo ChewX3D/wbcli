@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ChewX3D/wbcli/internal/adapters/clock"
-	"github.com/ChewX3D/wbcli/internal/adapters/configstore"
-	"github.com/ChewX3D/wbcli/internal/adapters/secretstore"
-	"github.com/ChewX3D/wbcli/internal/adapters/whitebit"
-	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
-	collateralservice "github.com/ChewX3D/wbcli/internal/app/services/collateral"
+	"github.com/ChewX3D/crypto/internal/adapters/clock"
+	"github.com/ChewX3D/crypto/internal/adapters/configstore"
+	"github.com/ChewX3D/crypto/internal/adapters/secretstore"
+	"github.com/ChewX3D/crypto/internal/adapters/whitebit"
+	authservice "github.com/ChewX3D/crypto/internal/app/services/auth"
+	collateralservice "github.com/ChewX3D/crypto/internal/app/services/collateral"
 )
 
 // AuthUseCases defines auth operations exposed to command adapters.

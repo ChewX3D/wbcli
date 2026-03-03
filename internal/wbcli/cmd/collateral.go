@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	collateralcmd "github.com/ChewX3D/wbcli/cmd/collateral"
+	collateralcmd "github.com/ChewX3D/crypto/internal/wbcli/cmd/collateral"
 	"github.com/spf13/cobra"
 )
 

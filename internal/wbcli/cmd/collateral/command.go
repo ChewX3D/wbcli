@@ -1,8 +1,8 @@
 package collateralcmd
 
 import (
-	ordercmd "github.com/ChewX3D/wbcli/cmd/order"
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
+	ordercmd "github.com/ChewX3D/crypto/internal/wbcli/cmd/order"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
 	"github.com/spf13/cobra"
 )
 

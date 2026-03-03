@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	authcmd "github.com/ChewX3D/wbcli/cmd/auth"
+	authcmd "github.com/ChewX3D/crypto/internal/wbcli/cmd/auth"
 	"github.com/spf13/cobra"
 )
 

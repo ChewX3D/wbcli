@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
+	"github.com/ChewX3D/crypto/internal/app/ports"
 )
 
 const (

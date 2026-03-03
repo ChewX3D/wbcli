@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
+	"github.com/ChewX3D/crypto/internal/app/ports"
 )
 
 func TestFileSessionStoreWritesMetadataOnlyWith0600Permissions(t *testing.T) {

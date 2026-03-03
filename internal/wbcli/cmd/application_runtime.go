@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
 )
 
 type applicationProvider func() (*appcontainer.Application, error)

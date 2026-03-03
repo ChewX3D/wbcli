@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 var (

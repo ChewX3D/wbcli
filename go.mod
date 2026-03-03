@@ -1,4 +1,4 @@
-module github.com/ChewX3D/wbcli
+module github.com/ChewX3D/crypto
 
 go 1.25.6
 

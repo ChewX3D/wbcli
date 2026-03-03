@@ -3,7 +3,7 @@ package ordercmd
 import (
 	"errors"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
+	"github.com/ChewX3D/crypto/internal/app/ports"
 )
 
 func mapError(err error) error {

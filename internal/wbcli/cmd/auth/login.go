@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
-	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
-	clitools "github.com/ChewX3D/wbcli/internal/cli"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
+	authservice "github.com/ChewX3D/crypto/internal/app/services/auth"
+	clitools "github.com/ChewX3D/crypto/internal/cli"
 	"github.com/spf13/cobra"
 )
 

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	appcontainer "github.com/ChewX3D/wbcli/internal/app/application"
-	"github.com/ChewX3D/wbcli/internal/app/ports"
-	authservice "github.com/ChewX3D/wbcli/internal/app/services/auth"
-	collateralservice "github.com/ChewX3D/wbcli/internal/app/services/collateral"
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
+	appcontainer "github.com/ChewX3D/crypto/internal/app/application"
+	"github.com/ChewX3D/crypto/internal/app/ports"
+	authservice "github.com/ChewX3D/crypto/internal/app/services/auth"
+	collateralservice "github.com/ChewX3D/crypto/internal/app/services/collateral"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
 )
 
 func executeCommandWithFactory(

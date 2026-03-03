@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ChewX3D/wbcli/internal/app/ports"
-	domainauth "github.com/ChewX3D/wbcli/internal/domain/auth"
-	"github.com/ChewX3D/wbcli/internal/ptrutil"
+	"github.com/ChewX3D/crypto/internal/app/ports"
+	domainauth "github.com/ChewX3D/crypto/internal/domain/auth"
+	"github.com/ChewX3D/crypto/internal/ptrutil"
 )
 
 // LoginRequest is input for auth login use-case.
