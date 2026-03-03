@@ -440,11 +440,6 @@ Primary references:
   - https://go.dev/blog/context-and-structs
   - https://go.dev/blog/pipelines
 
-Official WhiteBIT reference (for signing/auth flow):
-
-- https://github.com/whitebit-exchange/api-quickstart/blob/master/src/go/auth.go
-  - can be used as an official WhiteBIT reference implementation
-
 Mandatory engineering rules derived from these docs:
 
 - Concurrency correctness:
@@ -485,6 +480,43 @@ Mandatory engineering rules derived from these docs:
   - transport clients must be strict mirrors of official API documentation (endpoints, payload fields, documented enums, response/error mapping)
   - transport clients must not contain use-case/business decisions
   - use-case behavior (for example login credential verification policy) belongs to `internal/app/services/*` and adapter layer, not transport client methods
+
+## WhiteBIT API References
+
+Official documentation for all WhiteBIT HTTP REST and WebSocket APIs.
+
+Usage note: the MCP tool (`SearchWhiteBit`) returns only short excerpts and is useful for discovery only. Use `WebFetch` on the URLs below whenever you need actual request/response field specs.
+
+### REST API
+
+- https://docs.whitebit.com/api-reference/overview
+  - base URL (`https://whitebit.com`), endpoint group index, authentication quickstart, and overview of rate limit and error format
+- https://docs.whitebit.com/api-reference/authentication
+  - private endpoint signing: headers (`X-TXC-APIKEY`, `X-TXC-PAYLOAD`, `X-TXC-SIGNATURE`), nonce and nonceWindow rules, and full table of common auth error messages
+- https://docs.whitebit.com/api-reference/rate-limits
+  - REST rate limit values, error response format (`code`, `message`, `errors`), and 429 handling guidance
+- https://docs.whitebit.com/api-reference/collateral-trading/overview
+  - index of all collateral trading endpoints: account balance, leverage, hedge mode, all order types (limit, bulk, market, stop-limit, OCO, OTO, trigger), open/close positions, positions history, funding history
+- https://github.com/whitebit-exchange/api-quickstart/blob/master/src/go/auth.go
+  - official Go reference implementation for request signing; use as the canonical example for HMAC-SHA512 payload construction
+
+### WebSocket API
+
+- https://docs.whitebit.com/websocket/overview
+  - connection endpoint (`wss://api.whitebit.com/ws`), JSON-RPC message format, ping/pong keepalive, subscription model, and quickstart examples
+- https://docs.whitebit.com/websocket/authentication
+  - two-step private channel auth: obtain a short-lived token via `POST /api/v4/profile/websocket-token`, then send an authorize frame on the connection; required once per connection before subscribing to any private channel
+- https://docs.whitebit.com/websocket/rate-limits
+  - WebSocket connection limits (1000/min), JSON-RPC request limits (200/min per connection), timeout behavior, and error codes
+- https://docs.whitebit.com/websocket/market-streams/overview
+  - public channels: kline (OHLCV), last price, 24h market statistics, trades stream, order book depth, book ticker; no authentication required
+- https://docs.whitebit.com/websocket/account-streams/authorize
+  - private channels entry point: balances, orders, deals, positions, margin call and liquidation events; requires WebSocket authentication
+
+### Reference
+
+- https://docs.whitebit.com/glossary
+  - canonical definitions for domain terms used throughout the API: hedge mode, position side (LONG/SHORT/BOTH), collateral balance, limit order, maker/taker, etc.
 
 ## Architecture Standard (Hexagonal / Ports And Adapters)
 
