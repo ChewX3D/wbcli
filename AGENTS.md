@@ -184,6 +184,15 @@ Current wiring model:
 - application container exposes use-case interfaces (for example `AuthUseCases`) rather than direct adapter dependencies
 - tests override runtime wiring via `cmd.NewRootCmdForTest(factory)`
 
+### Trading Bot Documentation
+
+The trading bot is a BTC/USDT perpetual futures grid trading bot for WhiteBit exchange. Design and strategy documentation lives in `docs/`:
+
+- `docs/trading-bot-strategy.md` — canonical strategy document: grid setup, core grid algorithm (self-healing fill/take-profit loop), EMA(50) trend filter, three-layer stop-loss system, hedge lock mechanism, circuit breakers, rebalancing algorithm (two-speed: fast tick loop + slow 15-min candle loop), expected performance, scaling guide, and pre-launch checklist
+- `docs/trading-bot-strategy-context.md` — conversation context capturing all decisions and reasoning from the initial strategy discussion: why BTC-only, why hedge mode, why maker-only, why 5x leverage, why EMA over SMA/DEMA, why grid trading over other strategies, why custom bot over existing platforms, full hedge lock reasoning, grid spacing scaling math, and open implementation questions
+
+These docs are the source of truth for bot strategy and design decisions. When implementation diverges from these docs, update the docs in the same change set.
+
 ## Backlog And Todo Workflow
 
 ### Triage
