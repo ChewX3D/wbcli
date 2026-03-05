@@ -2,9 +2,9 @@
 
 ## Overview
 
-A hedged grid trading bot for BTC/USDT perpetual futures on WhiteBit exchange, written in Go. The bot places maker-only limit orders above and below current price, profiting from BTC's natural price oscillations. It uses hedge mode to hold long and short positions simultaneously, an EMA trend filter to bias grid direction, and a multi-layer risk management system to survive black swan events.
+A hedged grid trading bot for BTC/USDT perpetual futures on WhiteBit exchange, written in Go. The bot places maker-only limit orders above and below the grid anchor, profiting from BTC's natural price oscillations. It uses hedge mode to hold long and short positions simultaneously, an EMA trend filter to bias grid direction, and a multi-layer risk management system to survive black swan events.
 
-**One-sentence summary:** Place buy orders below current price and sell orders above it, profit from BTC bouncing around, and protect yourself if it moves too far in one direction.
+**One-sentence summary:** Place buy orders below the grid anchor and sell orders above it, profit from BTC bouncing through the grid levels, and protect yourself if price moves outside the grid range.
 
 ## Exchange & Fees
 
@@ -15,22 +15,34 @@ A hedged grid trading bot for BTC/USDT perpetual futures on WhiteBit exchange, w
 - **Taker fee:** 0.055% (avoid at all costs)
 - **All orders must be `post_only: true`** to guarantee maker fee
 
+## Grid Terminology
+
+| Term | Meaning |
+|---|---|
+| **Grid anchor** | The center price around which the grid is built. Set on startup to current market price. Updated by the rebalancing algorithm when price drifts outside the grid range. No order is placed at the anchor itself — it's a reference point, not a level. |
+| **Grid step** | The fixed price distance between adjacent grid levels (e.g. \$200). |
+| **Grid level** | A specific price where an order sits. Each level is `anchor ± (N × step)` where N is the level number (1, 2, 3...). |
+| **Long levels** | Grid levels below the anchor where buy (open long) orders are placed. Labeled L1 (closest to anchor), L2, L3, etc. |
+| **Short levels** | Grid levels above the anchor where sell (open short) orders are placed. Labeled S1 (closest to anchor), S2, S3, etc. |
+| **Grid range** | The total price span from the lowest long level to the highest short level. With 3 levels per side and \$200 step: range = 6 × \$200 = \$1,200. |
+| **Round trip** | A complete entry fill + take-profit fill on the same grid level. One round trip = one profit capture. |
+
 ## Account Parameters
 
 | Parameter | Starting Value | Notes |
 |---|---|---|
 | Account size | \$100 | Only keep trading capital on exchange |
 | Leverage | 5x | Buying power: \$500 |
-| Grid spacing | \$200 | Tighten as account grows |
+| Grid step | \$200 | Tighten as account grows |
 | Grid levels | 3 per side (6 total) | Increase as account grows |
 | Position size | ~0.001 BTC per level | Adjust to stay within margin |
 
 ### Scaling Guide
 
 ```
-$100 account  → $200 grid spacing, 3 levels per side
-$200 account  → $150 grid spacing, 4 levels per side
-$500 account  → $100 grid spacing, 5 levels per side
+$100 account  → $200 grid step, 3 levels per side
+$200 account  → $150 grid step, 4 levels per side
+$500 account  → $100 grid step, 5 levels per side
 $2,000+ account → consider adding ETH/USDT as second grid
 $10,000+ account → diversify across exchanges and strategies
 ```
@@ -39,33 +51,35 @@ $10,000+ account → diversify across exchanges and strategies
 
 ### Grid Setup
 
-Place maker limit orders at fixed intervals above and below current price:
+On startup, the bot sets the grid anchor to the current market price and places maker limit orders at each grid level:
 
 ```
-Example: BTC at $60,000, grid spacing $200, 3 levels each side
+Example: grid anchor = $60,000, grid step = $200, 3 levels per side
 
-SHORT side (limit sells above price):
-  $60,200 — open short (take profit at $60,000)
-  $60,400 — open short (take profit at $60,200)
-  $60,600 — open short (take profit at $60,400)
+Short levels (limit sells above anchor):
+  S1  $60,200 — open short (take profit at $60,000)
+  S2  $60,400 — open short (take profit at $60,200)
+  S3  $60,600 — open short (take profit at $60,400)
 
-LONG side (limit buys below price):
-  $59,800 — open long (take profit at $60,000)
-  $59,600 — open long (take profit at $59,800)
-  $59,400 — open long (take profit at $59,600)
+          --- $60,000 (grid anchor, no order here) ---
+
+Long levels (limit buys below anchor):
+  L1  $59,800 — open long (take profit at $60,000)
+  L2  $59,600 — open long (take profit at $59,800)
+  L3  $59,400 — open long (take profit at $59,600)
 ```
 
 ### How It Profits
 
-BTC oscillates → grid orders fill on both sides → each round trip captures the grid spacing as profit. More volatility = more fills = more profit.
+BTC oscillates through the grid levels — entry orders fill on both sides, take-profits close them at the next level. Each completed round trip captures one grid step as gross profit.
 
-### Profit Per Fill
+### Profit Per Round Trip
 
 ```
-Grid spacing: $200
+Grid step: $200
 Position size: 0.001 BTC
 Gross profit per round trip: $0.20
-Maker fees (0.01% × 2 sides): ~$0.012
+Maker fees (0.01% × 2 fills): ~$0.012
 Net profit per round trip: ~$0.19
 ```
 
@@ -73,30 +87,30 @@ Net profit per round trip: ~$0.19
 
 ```
 on_startup:
-  price = get_current_price()
+  anchor = get_current_price()
   for i = 1 to NUM_LEVELS:
-    place_buy(price - spacing * i)     // long grid
-    place_sell(price + spacing * i)    // short grid
+    place_buy(anchor - step * i)     // long levels
+    place_sell(anchor + step * i)    // short levels
 
 on_order_filled(order):
-  if order.side == BUY and order.is_grid:
-    // Long position opened → place take profit one spacing above
-    place_sell(order.price + spacing)
+  if order.side == BUY:
+    next_side = SELL
+    next_price = order.price + step
+  if order.side == SELL:
+    next_side = BUY
+    next_price = order.price - step
 
-  if order.side == SELL and order.is_take_profit:
-    // Long take profit hit → restore original grid buy
-    place_buy(order.price - spacing)
-
-  if order.side == SELL and order.is_grid:
-    // Short position opened → place take profit one spacing below
-    place_buy(order.price - spacing)
-
-  if order.side == BUY and order.is_take_profit:
-    // Short take profit hit → restore original grid sell
-    place_sell(order.price + spacing)
+  if order.is_grid:
+    // Entry filled → place take profit at the next level
+    place_order(next_side, next_price, type=TAKE_PROFIT)
+  if order.is_take_profit:
+    // Take profit filled → restore the consumed grid level
+    place_order(next_side, next_price, type=GRID)
 ```
 
-The grid is self-healing: every completed round trip returns the grid to its original shape with profit captured. The bot doesn't predict anything — it lets price oscillation do the work.
+The fill/take-profit cycle automatically restores consumed grid levels as long as price stays within the grid range. Each completed round trip returns the level to its original state with profit captured. The bot does not predict price direction — it profits from price oscillating through the grid levels.
+
+When price drifts outside the grid range, the core algorithm can no longer generate fills. The rebalancing algorithm (see Grid Rebalancing section) handles this by moving the grid anchor to the current price.
 
 ## Trend Filter: EMA(50) on 15-Minute Candles
 
@@ -106,12 +120,12 @@ The grid runs with a directional bias based on a 50-period EMA calculated on 15-
 
 ```
 Price > EMA → Bullish bias
-  Long grid:  3 levels (full allocation)
-  Short grid: 2 levels (reduced)
+  Long levels:  3 (full allocation)
+  Short levels: 2 (reduced)
 
 Price < EMA → Bearish bias
-  Short grid: 3 levels (full allocation)
-  Long grid:  2 levels (reduced)
+  Short levels: 3 (full allocation)
+  Long levels:  2 (reduced)
 
 Price ≈ EMA → Neutral
   Both sides: equal levels
@@ -224,7 +238,7 @@ Level 3: Weekly drawdown > 12%
            │                ┌──────▼──────┐
     ┌──────▼──────┐         │ Rebalance?  │
     │ Circuit     │         │ Adjust bias │
-    │ Breaker     │         │ Shift grid  │
+    │ Breaker     │         │ Move anchor │
     │ Monitor     │         └─────────────┘
     └──────┬──────┘
            │
@@ -266,22 +280,23 @@ Level 3: Weekly drawdown > 12%
 
 ### Grid Rebalancing
 
-When price trends away from the grid center, orders on the far side become stale and the grid stops generating profit. The bot must detect this and re-center the grid.
+When price drifts outside the grid range, orders on the far side become stale and the grid stops generating round trips. The bot must detect this and move the grid anchor to the current price.
 
 #### Why Rebalancing Is Needed
 
 ```
-Grid center: $60,000. BTC trends to $62,000.
+Grid anchor: $60,000, grid step: $200. BTC trends to $62,000.
 
-  $60,600  S3 — filled, TP waiting at $60,400 (unrealized loss)
-  $60,400  S2 — filled, TP waiting at $60,200 (unrealized loss)
-  $60,200  S1 — filled, TP waiting at $60,000 (unrealized loss)
-  ------- price is $62,000
-  $59,800  L1 — will never fill
-  $59,600  L2 — will never fill
-  $59,400  L3 — will never fill
+  S3  $60,600 — filled, TP waiting at $60,400 (unrealized loss)
+  S2  $60,400 — filled, TP waiting at $60,200 (unrealized loss)
+  S1  $60,200 — filled, TP waiting at $60,000 (unrealized loss)
+      ------- price is $62,000 (outside grid range) -------
+  L1  $59,800 — will never fill at this price
+  L2  $59,600 — will never fill
+  L3  $59,400 — will never fill
 
-Grid is dead. All short positions are losing. Long orders are unreachable.
+Grid is dead. All short positions are losing. Long levels are unreachable.
+No round trips can complete.
 ```
 
 #### Two Processing Speeds
@@ -291,13 +306,13 @@ The bot operates at two different speeds:
 **Fast loop (every WebSocket tick):**
 - Monitor order fills → place take-profits instantly
 - Monitor circuit breaker thresholds → react instantly
-- Detect flash crash / 3+ level gap → emergency rebalance instantly
+- Detect flash crash / price gaps 3+ grid steps beyond the grid range → emergency rebalance instantly
 
 **Slow loop (every 15-minute candle close):**
 - Update EMA
-- Check if grid needs rebalancing
-- Adjust long/short bias based on trend filter
-- Shift grid if needed
+- Check if price is outside the grid range
+- Adjust long/short level allocation based on trend filter
+- Move anchor if needed
 
 This separation keeps the bot responsive to fills and emergencies while avoiding unnecessary grid restructuring on every price tick.
 
@@ -306,56 +321,57 @@ This separation keeps the bot responsive to fills and emergencies while avoiding
 ```
 on_candle_close_15min(price):
   update_ema(candle.close)
-  levels_beyond = calculate_levels_beyond_grid(price)
+  levels_beyond = calculate_levels_beyond_grid_range(price)
 
   if levels_beyond == 0:
-    // Price inside grid. Only adjust trend bias.
+    // Price inside grid range. Only adjust trend bias.
     adjust_grid_bias(ema)
     return
 
   if levels_beyond == 1:
-    // Slightly outside grid. Shift gradually.
-    // Cancel farthest order on opposite side.
-    // Place new order 1 level closer to current price.
+    // Slightly outside grid range. Shift anchor by 1 step.
+    // Cancel farthest level on opposite side.
+    // Place new level 1 step closer to current price.
     // Don't close losing positions yet.
-    shift_grid_one_level(direction)
+    shift_anchor_one_step(direction)
     return
 
   if levels_beyond >= 2:
-    // Clearly trending. Full rebalance.
+    // Clearly trending. Full rebalance — move anchor to current price.
     cancel_all_stale_orders()
     if losing_positions_exceed(2% of account):
       hedge_lock(losing_positions)
     else:
       close(losing_positions)  // accept small loss
-    place_new_grid(current_price)
+    place_new_grid(current_price)  // current price becomes the new anchor
     return
 ```
 
 **Emergency rebalance (on any WebSocket tick):**
 ```
 on_price_update(price):
-  levels_beyond = calculate_levels_beyond_grid(price)
+  levels_beyond = calculate_levels_beyond_grid_range(price)
 
   if levels_beyond >= 3:
-    // Flash crash or bot restart. Don't wait for candle.
-    emergency_rebalance(price)
+    // Flash crash or pump. Don't wait for candle.
+    emergency_rebalance(price)  // move anchor to current price immediately
     return
 ```
 
 #### Gradual Shift Example
 
 ```
-Grid center: $60,000, spacing: $200
+Grid anchor: $60,000, grid step: $200
 
-15-min candle closes at $60,300 (1 level beyond S1):
-  → Cancel L3 at $59,400 (farthest stale order)
-  → Place new order at $60,200
-  → Grid shifted up by 1 level without closing any positions
+15-min candle closes at $60,300 (1 step beyond S1):
+  → Cancel L3 at $59,400 (farthest stale long level)
+  → Place new level at $60,200
+  → Anchor shifts to $60,200 without closing any positions
 
-Next candle closes at $60,500 (still 1 level beyond new grid edge):
-  → Shift up by 1 more level
-  → Grid gradually follows the trend
+Next candle closes at $60,500 (still 1 step beyond new grid edge):
+  → Cancel farthest stale long level
+  → Place new level near current price
+  → Anchor shifts again — grid gradually follows the trend
 
 This avoids realizing losses on temporary moves while keeping
 the grid alive during real trends.
@@ -366,20 +382,20 @@ the grid alive during real trends.
 ```
 BTC at $60,000:
   12:00:00 — price spikes to $60,250 (beyond S1)
-  12:00:03 — price drops back to $60,150 (inside grid)
+  12:00:03 — price drops back to $60,150 (inside grid range)
 
-  Instant reaction: shifted grid for no reason, wasted API calls
+  Instant reaction: moved anchor for no reason, wasted API calls
   Wait for 15-min candle: did nothing. Correct decision.
 ```
 
-Tying rebalancing to 15-minute candle closes naturally filters out wicks and noise. The only exception is flash crashes (3+ levels gap) which require immediate action.
+Tying rebalancing to 15-minute candle closes naturally filters out wicks and noise. The only exception is flash crashes (3+ grid steps beyond the grid range) which require immediate action.
 
 ## Expected Performance
 
 ### Per-Trade Metrics
 
 ```
-Win rate per trade: ~85%
+Win rate per round trip: ~85%
 Profit per winning round trip: ~$0.19 (at $100 account)
 Loss per losing trade: capped by circuit breakers
 ```
@@ -420,8 +436,8 @@ Realistic ARR: 400-500% (accounting for bad months)
 ## Three Outcomes
 
 ```
-1. BTC bounces around (70% of days) → grid fills both sides → profit ✓
-2. BTC trends slowly (20% of days)  → trend filter helps, reduced profit
+1. BTC oscillates within grid range (70% of days) → round trips complete on both sides → profit
+2. BTC trends slowly (20% of days)  → rebalancing moves anchor, trend filter helps, reduced profit
 3. BTC crashes/pumps hard (10%)     → hedge lock + circuit breaker → small locked loss
 ```
 
